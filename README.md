@@ -1,5 +1,7 @@
 # PhD Thesis
 
+[![DOI](https://zenodo.org/badge/505834191.svg)](https://zenodo.org/badge/latestdoi/505834191)
+
 Title: [Large-scale, Dynamic and Distributed Multi-agent Coordination for Real-time Systems](https://eprints.soton.ac.uk/457639)
 
 Author: [Luca Capezzuto](https://lcpz.gitlab.io)

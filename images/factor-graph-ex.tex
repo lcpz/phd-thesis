@@ -1,0 +1,18 @@
+\begin{tikzpicture}
+    \begin{scope}[square/.style={regular polygon,regular polygon sides=4}]
+        \node (v1) at (-3, 0) [square,draw] {$f_1$};
+        \node (v2) at (-1.5 , -1.5) [square,draw] {$f_2$};
+        \node (v3) at (0 , 0) [square,draw] {$f_3$};
+        \node (v4) at (1.5 , -1.5) [square,draw] {$f_4$};
+        \node (a1) at (-1.5, 0) [circle,draw] {$\chi_1$};
+        \node (a2) at (0 , -1.5) [circle,draw] {$\chi_2$};
+    \end{scope}
+    \begin{scope}
+        \draw (a1) -- (v1);
+        \draw (a1) -- (v2);
+        \draw (a1) -- (v3);
+        \draw (a2) -- (v2);
+        \draw (a2) -- (v3);
+        \draw (a2) -- (v4);
+    \end{scope}
+\end{tikzpicture}

@@ -1,0 +1,32 @@
+#!/bin/sh
+# dependencies: ghostscript, pdfk, exiftool, qpdf, pdfinfo
+
+if [ ! -z "$1" ]
+then
+    thesis="$1"
+else
+    if [ -f "./thesis.pdf" ]
+    then
+        thesis="thesis.pdf"
+    else
+        # get the first match found
+        # under NetBSD, use -exit instead of -quit
+        thesis="`find . -type f -iname '*.pdf' -print -quit`"
+    fi
+fi
+
+gs -sDEVICE=pdfwrite -dBATCH -dNOPAUSE -dSAFER \
+   -dPrinted=false -dCompressFonts=true -dEmbedAllFonts=true \
+   -dPDFACompatibilityPolicy=1 -dDetectDuplicateImages=true \
+   -dFastWebView=true -sOutputFile=r.pdf $thesis
+
+# remove all metadata, including hyperlinks
+#pdftk r.pdf dump_data | sed -e 's/\(InfoValue:\)\s.*/\1\ /g' | pdftk r.pdf update_info - output r2.pdf
+#rm -fr r.pdf; mv r2.pdf $thesis
+
+exiftool -m -all:all= -overwrite_original $thesis
+exiftool -Title="PhD Thesis - $(git config user.name)" -overwrite_original $thesis
+
+qpdf --linearize --replace-input $thesis
+
+pdfinfo $thesis

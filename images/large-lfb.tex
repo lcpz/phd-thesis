@@ -1,0 +1,691 @@
+\begin{tikzpicture}
+    \begin{groupplot}[%
+        group style={group size=3 by 1, horizontal sep=2cm},
+        grid=both,
+        grid style={line width=.1pt, draw=gray!10},
+        major grid style={line width=.2pt,draw=gray!50},
+        xtick={1,4,8,12,16,20},
+        ymax=150000,
+        every axis plot/.append style={thick},
+        legend pos=north west]
+
+        \Large
+
+        \node at (1.86,7.2) {\Large\textsc{Suite $2$: LFB Problems $\left( |A| = 150 \right)$}};
+
+        \nextgroupplot[xlabel=$|V| / |A|$,ylabel=$score(\bm{x})$, legend
+        entries={\textsc{ant-$\varepsilon$}, \textsc{cts}, \textsc{edf}}, title=(d) Superadditive]
+
+        \addlegendimage{blue,mark=pentagon*,mark options={solid,fill=white}}
+        \addlegendimage{green!70!black,mark=diamond*,densely dotted,mark options={solid,fill=white}}
+        \addlegendimage{mark=*,red,densely dashed,mark options={solid,fill=red}}
+
+        %% EDF
+        \addplot [dashed, red,mark=*,mark options={solid}] coordinates {%
+            (1, 5386)
+            (2, 8579)
+            (3, 10318)
+            (4, 11472)
+            (5, 12282)
+            (6, 12991)
+            (7, 13748)
+            (8, 14112)
+            (9, 14470)
+            (10, 14844)
+            (11, 15242)
+            (12, 15535)
+            (13, 15781)
+            (14, 16069)
+            (15, 16262)
+            (16, 16505)
+            (17, 16690)
+            (18, 16852)
+            (19, 17122)
+            (20, 17279)
+        };
+
+        \addplot [name path=u1, draw=none] plot coordinates {%
+            (1, 5452)
+            (2, 9421)
+            (3, 11273)
+            (4, 12248)
+            (5, 12968)
+            (6, 13327)
+            (7, 13935)
+            (8, 14360)
+            (9, 14691)
+            (10, 15121)
+            (11, 15434)
+            (12, 15740)
+            (13, 16036)
+            (14, 16268)
+            (15, 16394)
+            (16, 16656)
+            (17, 16904)
+            (18, 17055)
+            (19, 17277)
+            (20, 17488)
+        };
+
+        \addplot [name path=l1, draw=none] plot coordinates {%
+            (1, 5300)
+            (2, 9180)
+            (3, 11002)
+            (4, 11983)
+            (5, 12562)
+            (6, 13086)
+            (7, 13601)
+            (8, 13945)
+            (9, 14389)
+            (10, 14737)
+            (11, 15156)
+            (12, 15369)
+            (13, 15690)
+            (14, 15841)
+            (15, 16185)
+            (16, 16341)
+            (17, 16494)
+            (18, 16731)
+            (19, 16978)
+            (20, 17070)
+        };
+
+        \addplot+ [fill=red!20,postaction={pattern color=red!35, pattern=north
+        west lines}] fill between[of=u1 and l1];
+
+        %% ANT
+        \addplot [blue,mark=pentagon*,mark options={solid, fill=white}] plot coordinates {%
+            (1, 5924)
+            (2, 9917)
+            (3, 15089)
+            (4, 20020)
+            (5, 25560)
+            (6, 30163)
+            (7, 35621)
+            (8, 39592)
+            (9, 45710)
+            (10, 50748)
+            (11, 54183)
+            (12, 59329)
+            (13, 65232)
+            (14, 70920)
+            (15, 78555)
+            (16, 78559)
+            (17, 85796)
+            (18, 94734)
+            (19, 95195)
+            (20, 98945)
+        };
+
+        \addplot [name path=u2, draw=none] plot coordinates {%
+            (1, 6010)
+            (2, 10065)
+            (3, 15363)
+            (4, 20328)
+            (5, 26263)
+            (6, 31130)
+            (7, 37248)
+            (8, 41551)
+            (9, 47613)
+            (10, 53636)
+            (11, 56806)
+            (12, 63182)
+            (13, 70077)
+            (14, 75114)
+            (15, 82028)
+            (16, 82560)
+            (17, 92613)
+            (18, 99729)
+            (19, 100182)
+            (20, 108264)
+        };
+
+        \addplot [name path=l2, draw=none] plot coordinates {%
+            (1, 4879)
+            (2, 9762)
+            (3, 14629)
+            (4, 19538)
+            (5, 24971)
+            (6, 29095)
+            (7, 34242)
+            (8, 37964)
+            (9, 43563)
+            (10, 48870)
+            (11, 51113)
+            (12, 55208)
+            (13, 61354)
+            (14, 67332)
+            (15, 76554)
+            (16, 72952)
+            (17, 80528)
+            (18, 90358)
+            (19, 89014)
+            (20, 90302)
+        };
+
+        \addplot+ [fill=blue!15,postaction={pattern color=blue!25, pattern=dots}] fill between[of=u2 and l2];
+
+        %% CTS
+        \addplot [green!70!black,mark=diamond*,densely dotted,mark options={solid, fill=white}] plot coordinates {%
+            (1, 17858)
+            (2, 34131)
+            (3, 41084)
+            (4, 39555)
+            (5, 37258)
+            (6, 34069)
+            (7, 33346)
+            (8, 31670)
+            (9, 29918)
+            (10, 29053)
+            (11, 28416)
+            (12, 27051)
+            (13, 25930)
+            (14, 26056)
+            (15, 25896)
+            (16, 25180)
+            (17, 26117)
+            (18, 24455)
+            (19, 23904)
+            (20, 24161)
+        };
+
+        \addplot [name path=u2, draw=none] plot coordinates {%
+            (1, 18117)
+            (2, 34606)
+            (3, 42197)
+            (4, 41872)
+            (5, 38774)
+            (6, 35373)
+            (7, 34903)
+            (8, 33788)
+            (9, 31792)
+            (10, 31195)
+            (11, 30011)
+            (12, 28993)
+            (13, 27360)
+            (14, 27178)
+            (15, 27228)
+            (16, 26711)
+            (17, 27253)
+            (18, 26373)
+            (19, 25871)
+            (20, 26093)
+        };
+
+        \addplot [name path=l2, draw=none] plot coordinates {%
+            (1, 17576)
+            (2, 33711)
+            (3, 39986)
+            (4, 38770)
+            (5, 35779)
+            (6, 32844)
+            (7, 32349)
+            (8, 30535)
+            (9, 28801)
+            (10, 27703)
+            (11, 27411)
+            (12, 25968)
+            (13, 24880)
+            (14, 25164)
+            (15, 24370)
+            (16, 23887)
+            (17, 24024)
+            (18, 23545)
+            (19, 23109)
+            (20, 22006)
+        };
+
+        \addplot+ [fill=green!20,postaction={pattern color=green!35, pattern=north east lines}] fill between[of=u2 and l2];
+
+
+        \nextgroupplot[xlabel=$|V| / |A|$,ylabel=$score(\bm{x})$, legend
+        entries={\textsc{\textsc{ant-$\varepsilon$}}, \textsc{cts}, \textsc{edf}},
+        title=(e) UC\_NDCS]
+
+        \addlegendimage{blue,mark=pentagon*,mark options={solid,fill=white}}
+        \addlegendimage{green!70!black,mark=diamond*,densely dotted,mark options={solid,fill=white}}
+        \addlegendimage{mark=*,red,densely dashed,mark options={solid,fill=red}}
+
+        %% EDF
+        \addplot [dashed, red,mark=*,mark options={solid}] coordinates {%
+            (1, 7526)
+            (2, 9987)
+            (3, 11420)
+            (4, 12527)
+            (5, 13047)
+            (6, 13601)
+            (7, 14165)
+            (8, 14648)
+            (9, 15113)
+            (10, 15390)
+            (11, 15738)
+            (12, 15979)
+            (13, 16386)
+            (14, 16511)
+            (15, 16764)
+            (16, 17037)
+            (17, 17216)
+            (18, 17388)
+            (19, 17588)
+            (20, 17746)
+        };
+
+        \addplot [name path=u1, draw=none] plot coordinates {%
+            (1, 7690)
+            (2, 10625)
+            (3, 11846)
+            (4, 12639)
+            (5, 13287)
+            (6, 13871)
+            (7, 14625)
+            (8, 14880)
+            (9, 15389)
+            (10, 15628)
+            (11, 16057)
+            (12, 16190)
+            (13, 16529)
+            (14, 16724)
+            (15, 16873)
+            (16, 17242)
+            (17, 17400)
+            (18, 17652)
+            (19, 17775)
+            (20, 17963)
+        };
+
+        \addplot [name path=l1, draw=none] plot coordinates {%
+            (1, 7420)
+            (2, 10281)
+            (3, 11512)
+            (4, 12352)
+            (5, 12867)
+            (6, 13529)
+            (7, 13978)
+            (8, 14484)
+            (9, 14934)
+            (10, 15293)
+            (11, 15602)
+            (12, 15804)
+            (13, 16267)
+            (14, 16356)
+            (15, 16546)
+            (16, 16811)
+            (17, 17014)
+            (18, 17285)
+            (19, 17496)
+            (20, 17579)
+        };
+
+        \addplot+ [fill=red!20,postaction={pattern color=red!35, pattern=north
+        west lines}] fill between[of=u1 and l1];
+
+        %% ANT
+        \addplot [blue,mark=pentagon*,mark options={solid, fill=white}] plot coordinates {%
+            (1, 7540)
+            (2, 13067)
+            (3, 19575)
+            (4, 26504)
+            (5, 32715)
+            (6, 39684)
+            (7, 46496)
+            (8, 53434)
+            (9, 60118)
+            (10, 66466)
+            (11, 72226)
+            (12, 80880)
+            (13, 86320)
+            (14, 93441)
+            (15, 101114)
+            (16, 111538)
+            (17, 113800)
+            (18, 120186)
+            (19, 128053)
+            (20, 136636)
+        };
+
+        \addplot [name path=u2, draw=none] plot coordinates {%
+            (1, 7548)
+            (2, 13245)
+            (3, 19948)
+            (4, 27029)
+            (5, 33704)
+            (6, 41233)
+            (7, 47837)
+            (8, 54942)
+            (9, 62976)
+            (10, 69673)
+            (11, 76684)
+            (12, 84147)
+            (13, 91981)
+            (14, 97929)
+            (15, 107967)
+            (16, 116288)
+            (17, 119691)
+            (18, 128418)
+            (19, 136277)
+            (20, 143266)
+        };
+
+        \addplot [name path=l2, draw=none] plot coordinates {%
+            (1, 6455)
+            (2, 12875)
+            (3, 19254)
+            (4, 25892)
+            (5, 31950)
+            (6, 38538)
+            (7, 45111)
+            (8, 51967)
+            (9, 58792)
+            (10, 62192)
+            (11, 70456)
+            (12, 75346)
+            (13, 78852)
+            (14, 90542)
+            (15, 92701)
+            (16, 103932)
+            (17, 105700)
+            (18, 114059)
+            (19, 120639)
+            (20, 125358)
+        };
+
+        \addplot+ [fill=blue!15,postaction={pattern color=blue!25, pattern=dots}] fill between[of=u2 and l2];
+
+        %% CTS
+        \addplot [green!70!black,mark=diamond*,densely dotted,mark options={solid, fill=white}] plot coordinates {%
+            (1, 14748)
+            (2, 27134)
+            (3, 23188)
+            (4, 20028)
+            (5, 18141)
+            (6, 23934)
+            (7, 20226)
+            (8, 16246)
+            (9, 16123)
+            (10, 17165)
+            (11, 15752)
+            (12, 14854)
+            (13, 13745)
+            (14, 15051)
+            (15, 14207)
+            (16, 12616)
+            (17, 10712)
+            (18, 13377)
+            (19, 15090)
+            (20, 12319)
+        };
+
+        \addplot [name path=u2, draw=none] plot coordinates {%
+            (1, 17285)
+            (2, 31221)
+            (3, 33518)
+            (4, 28978)
+            (5, 23503)
+            (6, 29321)
+            (7, 27450)
+            (8, 19720)
+            (9, 21418)
+            (10, 23573)
+            (11, 21918)
+            (12, 20962)
+            (13, 17834)
+            (14, 21167)
+            (15, 21322)
+            (16, 16901)
+            (17, 15507)
+            (18, 19586)
+            (19, 19939)
+            (20, 17343)
+        };
+
+        \addplot [name path=l2, draw=none] plot coordinates {%
+            (1, 11815)
+            (2, 16359)
+            (3, 14588)
+            (4, 13597)
+            (5, 13882)
+            (6, 14334)
+            (7, 13775)
+            (8, 10178)
+            (9, 8890)
+            (10, 12963)
+            (11, 12227)
+            (12, 11170)
+            (13, 9826)
+            (14, 10498)
+            (15, 11581)
+            (16, 6799)
+            (17, 5302)
+            (18, 8312)
+            (19, 10789)
+            (20, 6383)
+        };
+
+        \addplot+ [fill=green!20,postaction={pattern color=green!50, pattern=north east lines}] fill between[of=u2 and l2];
+
+        \nextgroupplot[xlabel=$|V| / |A|$,ylabel=$score(\bm{x})$, legend
+        entries={\textsc{\textsc{ant-$\varepsilon$}}, \textsc{cts}, \textsc{edf}},
+        title=(f) UC\_Agent-based]
+
+        \addlegendimage{blue,mark=pentagon*,mark options={solid,fill=white}}
+        \addlegendimage{green!70!black,mark=diamond*,densely dotted,mark options={solid,fill=white}}
+        \addlegendimage{mark=*,red,densely dashed,mark options={solid,fill=red}}
+
+        %% EDF
+        \addplot [dashed, red,mark=*,mark options={solid}] coordinates {%
+            (1, 3133)
+            (2, 5959)
+            (3, 8242)
+            (4, 10162)
+            (5, 11145)
+            (6, 11919)
+            (7, 12686)
+            (8, 13283)
+            (9, 13785)
+            (10, 14268)
+            (11, 14695)
+            (12, 15010)
+            (13, 15377)
+            (14, 15645)
+            (15, 15901)
+            (16, 16212)
+            (17, 16478)
+            (18, 16739)
+            (19, 16871)
+            (20, 16980)
+        };
+
+        \addplot [name path=u1, draw=none] plot coordinates {%
+            (1, 3200)
+            (2, 6108)
+            (3, 8409)
+            (4, 10541)
+            (5, 11704)
+            (6, 12616)
+            (7, 13374)
+            (8, 13981)
+            (9, 14442)
+            (10, 14849)
+            (11, 15099)
+            (12, 15407)
+            (13, 15714)
+            (14, 16042)
+            (15, 16165)
+            (16, 16357)
+            (17, 16659)
+            (18, 16876)
+            (19, 17058)
+            (20, 17181)
+        };
+
+        \addplot [name path=l1, draw=none] plot coordinates {%
+            (1, 3079)
+            (2, 5813)
+            (3, 8084)
+            (4, 10131)
+            (5, 11481)
+            (6, 12331)
+            (7, 13147)
+            (8, 13637)
+            (9, 14135)
+            (10, 14474)
+            (11, 14802)
+            (12, 15145)
+            (13, 15464)
+            (14, 15674)
+            (15, 15900)
+            (16, 16075)
+            (17, 16329)
+            (18, 16521)
+            (19, 16778)
+            (20, 16887)
+        };
+
+        \addplot+ [fill=red!20,postaction={pattern color=red!35, pattern=north
+        west lines}] fill between[of=u1 and l1];
+
+        %% ANT
+        \addplot [blue,mark=pentagon*,mark options={solid, fill=white}] plot coordinates {%
+            (1, 4110)
+            (2, 7108)
+            (3, 9131)
+            (4, 12087)
+            (5, 15162)
+            (6, 18081)
+            (7, 21701)
+            (8, 24451)
+            (9, 26791)
+            (10, 30492)
+            (11, 33115)
+            (12, 37851)
+            (13, 39754)
+            (14, 42896)
+            (15, 44726)
+            (16, 50772)
+            (17, 51253)
+            (18, 56103)
+            (19, 57030)
+            (20, 61397)
+        };
+
+        \addplot [name path=u2, draw=none] plot coordinates {%
+            (1, 3193)
+            (2, 6352)
+            (3, 9359)
+            (4, 12680)
+            (5, 15994)
+            (6, 19307)
+            (7, 22551)
+            (8, 25784)
+            (9, 28532)
+            (10, 31757)
+            (11, 35829)
+            (12, 39831)
+            (13, 43184)
+            (14, 45919)
+            (15, 49170)
+            (16, 54127)
+            (17, 54355)
+            (18, 58347)
+            (19, 64780)
+            (20, 66256)
+        };
+
+        \addplot [name path=l2, draw=none] plot coordinates {%
+            (1, 3074)
+            (2, 5926)
+            (3, 8741)
+            (4, 11658)
+            (5, 14702)
+            (6, 17457)
+            (7, 20686)
+            (8, 23130)
+            (9, 25799)
+            (10, 28904)
+            (11, 31888)
+            (12, 35757)
+            (13, 37621)
+            (14, 40009)
+            (15, 40395)
+            (16, 47265)
+            (17, 48708)
+            (18, 52890)
+            (19, 52404)
+            (20, 57623)
+        };
+
+        \addplot+ [fill=blue!15,postaction={pattern color=blue!25, pattern=dots}] fill between[of=u2 and l2];
+
+        %% CTS
+        \addplot [green!70!black,mark=diamond*,densely dotted,mark options={solid, fill=white}] plot coordinates {%
+            (1, 12253)
+            (2, 21770)
+            (3, 27947)
+            (4, 35715)
+            (5, 42408)
+            (6, 47563)
+            (7, 52466)
+            (8, 54867)
+            (9, 55610)
+            (10, 55454)
+            (11, 53872)
+            (12, 53207)
+            (13, 52502)
+            (14, 50875)
+            (15, 50149)
+            (16, 49450)
+            (17, 49170)
+            (18, 47942)
+            (19, 46754)
+            (20, 47758)
+        };
+
+        \addplot [name path=u2, draw=none] plot coordinates {%
+            (1, 12654)
+            (2, 22382)
+            (3, 28751)
+            (4, 36553)
+            (5, 43297)
+            (6, 48441)
+            (7, 53539)
+            (8, 55859)
+            (9, 56581)
+            (10, 57187)
+            (11, 55375)
+            (12, 55551)
+            (13, 53793)
+            (14, 52507)
+            (15, 51893)
+            (16, 51008)
+            (17, 50358)
+            (18, 49997)
+            (19, 48919)
+            (20, 49364)
+        };
+
+        \addplot [name path=l2, draw=none] plot coordinates {%
+            (1, 11962)
+            (2, 21159)
+            (3, 27336)
+            (4, 35277)
+            (5, 41480)
+            (6, 46626)
+            (7, 51547)
+            (8, 54035)
+            (9, 54534)
+            (10, 54524)
+            (11, 53431)
+            (12, 51901)
+            (13, 50105)
+            (14, 49584)
+            (15, 48591)
+            (16, 48862)
+            (17, 48165)
+            (18, 46762)
+            (19, 45472)
+            (20, 45985)
+        };
+
+        \addplot+ [fill=green!20,postaction={pattern color=green!50, pattern=north east lines}] fill between[of=u2 and l2];
+    \end{groupplot}
+\end{tikzpicture}

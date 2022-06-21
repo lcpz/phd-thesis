@@ -1,0 +1,319 @@
+\begin{tikzpicture}
+    \begin{groupplot}[%
+        group style={group size=2 by 1, horizontal sep=2cm},
+        grid=both,
+        grid style={line width=.1pt, draw=gray!10},
+        major grid style={line width=.2pt,draw=gray!50},
+        xtick={1,4,8,12,16,20},
+        every axis plot/.append style={thick},
+        legend pos=north east]
+
+        \large
+
+        % Completed tasks
+
+        \nextgroupplot[xlabel=$|V| / |A|$,ylabel=Completed tasks ($\%$),
+        title=(a) UC\_NDCS, ymin=0, ymax=100, legend entries={\textsc{d-cts},
+        \textsc{dsa-sdp}}]
+
+        \addlegendimage{blue, line width=1.1}
+        \addlegendimage{red,dashed, line width=1.1}
+
+        %% DSA-SDP
+        \addplot [dashed, red, line width=1.1] coordinates {%
+            (1, 50)
+            (2, 30)
+            (3, 22)
+            (4, 18)
+            (5, 14)
+            (6, 11)
+            (7, 10)
+            (8, 9)
+            (9, 8)
+            (10, 7)
+            (11, 7)
+            (12, 6)
+            (13, 6)
+            (14, 6)
+            (15, 5)
+            (16, 5)
+            (17, 4)
+            (18, 4)
+            (19, 4)
+            (20, 4)
+        };
+
+        \addplot [name path=u1, draw=none] plot coordinates {%
+            (1, 54)
+            (2, 32)
+            (3, 24)
+            (4, 19)
+            (5, 15)
+            (6, 12)
+            (7, 11)
+            (8, 10)
+            (9, 9)
+            (10, 8)
+            (11, 7)
+            (12, 7)
+            (13, 6)
+            (14, 6)
+            (15, 5)
+            (16, 5)
+            (17, 5)
+            (18, 4)
+            (19, 4)
+            (20, 4)
+        };
+
+        \addplot [name path=l1, draw=none] plot coordinates {%
+            (1, 46)
+            (2, 29)
+            (3, 21)
+            (4, 16)
+            (5, 13)
+            (6, 11)
+            (7, 10)
+            (8, 9)
+            (9, 8)
+            (10, 7)
+            (11, 6)
+            (12, 6)
+            (13, 6)
+            (14, 5)
+            (15, 5)
+            (16, 4)
+            (17, 4)
+            (18, 4)
+            (19, 3)
+            (20, 3)
+        };
+
+        \addplot+ [fill=red!25,postaction={pattern color = red!40, pattern=north
+        west lines}] fill between[of=u1 and l1];
+
+        %% D-CTS
+        \addplot [blue, line width=1.1] coordinates {%
+            (1, 99)
+            (2, 51)
+            (3, 34)
+            (4, 27)
+            (5, 23)
+            (6, 19)
+            (7, 16)
+            (8, 15)
+            (9, 13)
+            (10, 12)
+            (11, 11)
+            (12, 11)
+            (13, 10)
+            (14, 9)
+            (15, 8)
+            (16, 8)
+            (17, 7)
+            (18, 7)
+            (19, 6)
+            (20, 6)
+        };
+
+        \addplot [name path=u2, draw=none] plot coordinates {%
+            (1, 100)
+            (2, 52)
+            (3, 36)
+            (4, 28)
+            (5, 24)
+            (6, 20)
+            (7, 17)
+            (8, 16)
+            (9, 14)
+            (10, 13)
+            (11, 12)
+            (12, 11)
+            (13, 10)
+            (14, 10)
+            (15, 9)
+            (16, 8)
+            (17, 8)
+            (18, 7)
+            (19, 7)
+            (20, 6)
+        };
+
+        \addplot [name path=l2, draw=none] plot coordinates {%
+            (1, 98)
+            (2, 50)
+            (3, 34)
+            (4, 26)
+            (5, 21)
+            (6, 18)
+            (7, 16)
+            (8, 15)
+            (9, 13)
+            (10, 12)
+            (11, 11)
+            (12, 10)
+            (13, 9)
+            (14, 9)
+            (15, 8)
+            (16, 7)
+            (17, 7)
+            (18, 6)
+            (19, 6)
+            (20, 5)
+        };
+
+        \addplot+ [fill=blue!25,opacity=0.6] fill between[of=u2 and l2];
+
+        \nextgroupplot[xlabel=$|V| / |A|$,ylabel=Completed tasks ($\%$),
+        title=(b) UC\_Agent-based, ymin=0, ymax=100,legend
+        entries={\textsc{d-cts}, \textsc{dsa-sdp}}]
+
+        \addlegendimage{blue,line width=1.1}
+        \addlegendimage{red,dashed, line width=1.1}
+
+        %% DSA-SDP
+        \addplot [dashed, red, line width=1.1] coordinates {%
+            (1, 58)
+            (2, 35)
+            (3, 26)
+            (4, 21)
+            (5, 17)
+            (6, 15)
+            (7, 13)
+            (8, 11)
+            (9, 10)
+            (10, 9)
+            (11, 9)
+            (12, 8)
+            (13, 7)
+            (14, 7)
+            (15, 7)
+            (16, 6)
+            (17, 6)
+            (18, 5)
+            (19, 5)
+            (20, 4)
+        };
+
+        \addplot [name path=u1, draw=none] plot coordinates {%
+            (1, 60)
+            (2, 38)
+            (3, 27)
+            (4, 22)
+            (5, 18)
+            (6, 16)
+            (7, 14)
+            (8, 13)
+            (9, 11)
+            (10, 10)
+            (11, 9)
+            (12, 9)
+            (13, 8)
+            (14, 7)
+            (15, 7)
+            (16, 7)
+            (17, 6)
+            (18, 6)
+            (19, 5)
+            (20, 5)
+        };
+
+        \addplot [name path=l1, draw=none] plot coordinates {%
+            (1, 57)
+            (2, 34)
+            (3, 25)
+            (4, 20)
+            (5, 16)
+            (6, 14)
+            (7, 12)
+            (8, 11)
+            (9, 10)
+            (10, 9)
+            (11, 8)
+            (12, 7)
+            (13, 7)
+            (14, 6)
+            (15, 6)
+            (16, 6)
+            (17, 5)
+            (18, 4)
+            (19, 4)
+            (20, 4)
+        };
+
+        \addplot+ [fill=red!25,postaction={pattern color = red!40, pattern=north
+        west lines}] fill between[of=u1 and l1];
+
+        %% D-CTS
+        \addplot [blue,line width=1.1] coordinates {%
+            (1, 98)
+            (2, 49)
+            (3, 36)
+            (4, 28)
+            (5, 23)
+            (6, 20)
+            (7, 17)
+            (8, 16)
+            (9, 14)
+            (10, 13)
+            (11, 11)
+            (12, 11)
+            (13, 10)
+            (14, 9)
+            (15, 9)
+            (16, 8)
+            (17, 8)
+            (18, 7)
+            (19, 7)
+            (20, 6)
+        };
+
+        \addplot [name path=u2, draw=none] plot coordinates {%
+            (1, 98)
+            (2, 52)
+            (3, 37)
+            (4, 29)
+            (5, 25)
+            (6, 21)
+            (7, 18)
+            (8, 16)
+            (9, 14)
+            (10, 13)
+            (11, 12)
+            (12, 11)
+            (13, 10)
+            (14, 9)
+            (15, 9)
+            (16, 8)
+            (17, 8)
+            (18, 7)
+            (19, 7)
+            (20, 7)
+        };
+
+        \addplot [name path=l2, draw=none] plot coordinates {%
+            (1, 96)
+            (2, 49)
+            (3, 35)
+            (4, 27)
+            (5, 22)
+            (6, 19)
+            (7, 16)
+            (8, 15)
+            (9, 14)
+            (10, 12)
+            (11, 11)
+            (12, 10)
+            (13, 9)
+            (14, 9)
+            (15, 8)
+            (16, 8)
+            (17, 7)
+            (18, 7)
+            (19, 6)
+            (20, 6)
+        };
+
+        \addplot+ [fill=blue!25, opacity=0.6] fill between[of=u2 and l2];
+    \end{groupplot}
+\end{tikzpicture}

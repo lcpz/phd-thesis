@@ -1,0 +1,185 @@
+%!TEX TS-program = pdflatex
+%!TEX encoding   = UTF-8 Unicode
+%!BIB TS-program = biber
+
+\documentclass{uosthesis}
+
+\usepackage[utf8]{inputenc}
+\usepackage[british]{babel}
+\usepackage[sb]{libertinus}
+\usepackage[T1]{fontenc}
+\usepackage{textcomp,amssymb,mathtools,accents}
+\usepackage[varqu,varl,scaled=.95]{inconsolata}
+\usepackage[amsthm,subscriptcorrection,frenchmath]{libertinust1math}
+\usepackage[scr=boondoxo,bb=boondox]{mathalpha}
+\usepackage[hyphenation,parindent,lastparline,rivers]{impnattypo}
+\usepackage[mathcal]{euscript}
+\usepackage{bm}
+\usepackage[style=ext-authoryear-ecomp,hyperref,backref]{biblatex}
+\usepackage[style=british]{csquotes}
+\usepackage{bookmark,titlesec,enumitem}
+\usepackage[font=small,labelfont=bf,labelsep=quad,justification=justified,singlelinecheck=off]{caption}
+\usepackage[ruled,vlined,linesnumbered,resetcount,algochapter]{algorithm2e}
+\usepackage[all]{nowidow}
+\usepackage{emptypage,pgfplots,addlines,environ,nameref,tocbasic,tocloft}
+\usepackage[normalem]{ulem}
+\usepackage[nomain,acronyms,toc=false,section=section,nonumberlist,style=mcoltree,stylemods={mcols,longbooktabs}]{glossaries-extra}
+\usepackage[activate={true,nocompatibility},final,babel=true,tracking=true,kerning=true,spacing=true]{microtype}
+
+\usepackage{silence}
+\WarningFilter{microtype}{I cannot find a spacing list}
+\WarningFilter{microtype}{Unable}
+\WarningFilter{latexfont}{Font shape}
+\WarningFilter{latexfont}{Some font}
+\WarningFilter{glossaries}{No}
+
+\pgfplotsset{compat=1.18}
+\usetikzlibrary{pgfplots.groupplots,patterns,shapes.geometric,arrows.meta,plotmarks,pgfplots.fillbetween}
+
+\pgfplotscreateplotcyclelist{exotic2}{%
+    black!5!red, densely dashed, every mark/.append style={solid,fill=red!45},mark=*\\%
+    black!5!orange, every mark/.append style={fill=white},mark=square*\\%
+    blue!80, every mark/.append style={fill=blue!45},mark=triangle*\\%
+}
+
+\pgfplotscreateplotcyclelist{exotic3}{%
+    black!5!red,every mark/.append style={solid,fill=red!80!black},mark=diamond*\\%
+    blue!45,every mark/.append style={fill=blue!45},mark=otimes*\\%
+    blue!90,densely dashed,mark=asterisk,every mark/.append style=solid\\%
+}
+
+% https://tex.stackexchange.com/a/308647
+\let\isout\sout
+\renewcommand{\sout}[1]{\ifmmode\text{\isout{\ensuremath{#1}}}\else\isout{#1}\fi}
+
+\definecolor{mycol1}{HTML}{008000} % green
+\definecolor{mycol2}{HTML}{FF8000} % orange
+
+\graphicspath{{./images/}}
+
+\numberwithin{figure}{chapter}
+\numberwithin{equation}{chapter}
+\numberwithin{table}{chapter}
+
+\renewcommand{\headrulewidth}{0pt}
+
+\fancypagestyle{plain}{
+		\fancyhead{}
+		\fancyfoot{}
+		\fancyfoot[C]{\thepage}
+}
+
+\fancypagestyle{references}{
+    \fancyhead[LO,RE]{References}
+    \fancyhead[RO,LE]{\thepage}
+		\fancyfoot{}
+}
+
+\titleformat{\chapter}[display]%
+{\normalfont\huge\bfseries\raggedright}{\normalfont\LARGE\chaptertitlename\ \thechapter}{20pt}{\Huge}
+
+\setcounter{tocdepth}{2} % set 2 to show subsections
+\setcounter{secnumdepth}{3}
+%\counterwithout*{footnote}{chapter}
+
+\defglsentryfmt[acronym]{\textit{\glsentrylong{\glslabel}} (\glsentrytext{\glslabel})}
+\newglossary{symbols}{sym}{sbl}{Symbols}
+\makenoidxglossaries
+\loadglsentries{sections/glossary.tex}
+\glsaddall
+\glssetcategoryattribute{acronym}{nohyper}{true}
+\renewcommand*{\glsnamefont}[1]{\textbf{#1}}
+\renewcommand{\glossarypreamble}{\small}
+
+\DeclareNameAlias{default}{family-given}
+\addbibresource{references.bib}
+\renewcommand*{\bibfont}{\small}
+\DeclareOuterCiteDelims{cite}{\bibopenbracket}{\bibclosebracket}
+
+\SetKwComment{Comment}{\hspace{.3em}// }{} % [l,r] options append \; by default
+\SetKw{Break}{break}
+%\SetAlgoCaptionSeparator{$\;\;$}
+
+\newcommand{\alloc}[2]{\tau^{#1 \rightarrow v}_{#2}}
+\newcommand{\tmax}{t_{max}}
+\newcommand{\mxc}{x_{v,\, t,\, C}}
+\newcommand{\mxa}{x_{v,\, t,\, a}}
+\newcommand{\mx}{x_{v,\, l,\, t,\, C}}
+
+\frenchspacing
+
+% add list of algorithms to the TOC
+\addtotoclist[float]{loa}
+\renewcommand\listofalgorithms{\listoftoc[{\vspace*{-27pt}\listalgorithmcfname}]{loa}}
+
+% increase math font size - http://tex.loria.fr/general/new/fntguide.html
+\DeclareMathSizes{13.82}{12.4}{10}{7}
+
+% set first page to skip copyright declaration
+\hypersetup{plainpages=false,pdfstartpage=3}
+
+\faculty    {Faculty of Engineering, Science and Mathematics}
+\FACULTY    {\MakeUppercase{\facname}}
+\department {School of Electronics and Computer Science}
+\DEPARTMENT {\MakeUppercase{\deptname}}
+\title      {Large-scale, Dynamic and Distributed Multi-agent Coordination for Real-time Systems}
+\authors    {Luca Capezzuto}
+\addresses  {\deptname\\\univname}
+\date       {November 2021} % month and year of submission
+
+\hypersetup{linkcolor=black,citecolor=black,urlcolor=black}
+
+\setlength{\parindent}{0pt}
+
+\hyphenation{Paraskevo-pou-los}
+
+\begin{document}
+
+\pagenumbering{roman}
+\copyrightDeclaration{}
+
+\microtypesetup{tracking=false}
+\maketitle
+\microtypesetup{tracking=true}
+
+\flushbottom
+
+\input{sections/abstract}
+
+{
+    \fancyhead[LO,RE]{Contents}
+    \tableofcontents\cleardoublepage
+    \listoffigures
+    %\listoftables
+    \listofalgorithms
+    \addcontentsline{toc}{chapter}{List of Algorithms}
+}
+{
+    \fancyhead[LO,RE]{Nomenclature}
+    \chapter*{\vspace*{-27pt}Nomenclature}
+    \vspace*{27pt}
+    \addcontentsline{toc}{chapter}{Nomenclature}
+    \printnoidxglossaries
+    \cleardoublepage
+}
+
+\authorshipdeclaration{(see Section \ref{sec:contrib} for a detailed list).}
+
+\include{sections/acknowledgements}
+
+\mainmatter
+\include{sections/00-introduction}
+\include{sections/01-literature}
+\include{sections/02-background}
+\include{sections/03-contrib1}
+\include{sections/04-contrib2}
+\include{sections/05-contrib3}
+\include{sections/conclusions}
+% ~25k words, according to texcount (limit: 75k)
+
+\backmatter
+\pagestyle{references}
+\SetTracking{encoding={*},shape=sc}{40}
+\printbibliography[heading=bibintoc,title={References}]
+
+\end{document}

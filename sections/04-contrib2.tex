@@ -1,0 +1,660 @@
+\chapter{Large-scale, Dynamic and Distributed CFSTP}\label{chap:contrib2}
+
+After identifying the principal shortcomings in the CFSTP literature in Section
+\ref{sec:cfstp-gaps}, this chapter proposes a minimal mathematical formulation in Section
+\ref{sec:cfstp-bip}, a distributed version of CTS in Section \ref{sec:dcts}, and the first
+large-scale, dynamic and distributed CFSTP test framework in Section \ref{sec:dcts-tests}.
+
+\section{Major Gaps in the CFSTP Literature}\label{sec:cfstp-gaps}
+
+There are $3$ main issues in the CFSTP literature. First, its original mathematical
+programming formulation (Section \ref{sec:mip}) is based on $4$ sets of binary variables,
+$1$ set of integer variables and $23$ types of constraints, $9$ of which use the Big-M
+method. So many variables and constraints make implementation difficult, while the Big-M
+method introduces a large penalty term that, if not chosen carefully, leads to serious
+rounding errors and ill conditioning \cite[Section $5.4.2$]{griva2009}.
+
+Second, there is no algorithm that is simultaneously scalable, distributed, and able to
+solve the CFSTP in dynamic environments (Section \ref{sec:pstat}). To solve this issue, we
+want to extend the CTS algorithm (Section \ref{sec:cts}), since it is anytime, has a
+polynomial time complexity, and can be used in dynamic environments. Its only limitation
+in relation to our objectives is to be centralised. In real-world domains such as disaster
+response, this leads to problems such as single points of failure, unsustainable
+computational loads, and poor performance in case of rapid changes of situation (Section
+\ref{sec:pstat}).
+To date, only \cite{ramchurn2010fms} have proposed a dynamic and distributed solution to
+the CFSTP. They reduced it to a DynDCOP (Section \ref{sec:lit-dyndcop}) and solved it with
+FMS, a variant of Max-Sum specialised for task allocation (Page \pageref{sec:lit-fms}).
+However, unlike CTS, FMS is not guaranteed to converge, it is not anytime, and its
+runtime is exponential in the number of agents. \cite{pujol2015} proposed BinaryMS
+(Section \ref{sec:robotests}), another Max-Sum variant which, compared to FMS, lowers the
+runtime to polynomial and achieves the same solution quality. Nonetheless, even BinaryMS
+is not guaranteed to converge and not anytime. In addition, it requires a preprocessing
+step with exponential runtime to transform the problem constraints into binary form,
+which makes it not suitable for dynamic environments.
+
+Lastly, no realistic CFSTP test framework has been proposed so far, although this
+shortcoming was already identified in the original article \cite[Section
+$8$]{ramchurn2010cfstp}. There are very few such frameworks even for the DynDCOP, to which
+the CFSTP can be reduced, as mentioned above. Indeed, although the DCOP and DynDCOP models
+can capture numerous real-world problems, researchers usually perform their empirical
+evaluations on synthetic problems or classical combinatorial problems, such as graph
+colouring and resource allocation \cite{fioretto2018survey}. To the best of our knowledge,
+to date only the following (Dyn)DCOP works have conducted tests based on real-world data.
+\cite{maheswaran2004b} considered resource-constrained multiple-event scheduling problems
+occurring in office environments. \cite{junges2008} evaluated the performance of complete
+DCOP algorithms in traffic light synchronisation problems. \cite{kim2011} developed
+heuristics for applying Max-Sum to problems based on the real-time sensor system NetRad.
+\cite{nelke2020,tkach2021} studied law enforcement problems inspired by police logs.
+However, none of these test frameworks is large-scale\footnote{It is worth mentioning
+\cite{leite2019a}, which is, to the best of our knowledge, the only study to date that
+evaluates incomplete DCOP algorithms in large-scale problems, although not using
+real-world data.}.
+% shneider2020 also use real-world data, although their problem is a simpler MRTA
+
+In the following sections, we address the above issues by proposing:
+\begin{itemize}
+    \item A novel mathematical programming formulation of the CFSTP, based only on binary
+        variables and $5$ types of constraints, which do not use the Big-M method;
+    \item A distributed version of the CTS algorithm that preserves its properties, namely
+        being anytime, scalable and guaranteed to converge;
+    \item The first large-scale, dynamic and distributed CFSTP test framework, based on
+        real-world data published by the London Fire Brigade
+        \cite{lfb-incident,lfb-mobilisation}.
+\end{itemize}
+
+\section{A Minimal Mathematical Program of the CFSTP}\label{sec:cfstp-bip}
+
+We formulate the CFSTP as a \emph{Binary Integer Program} (BIP) \cite{wolsey2020}. Based
+on the definitions of Sections \ref{sec:defs} $-$ \ref{sec:cv}, we detail our decision
+variables, constraints and objective function.
+
+\subsection{Decision variables}\label{sec:decvar}
+
+Similar to Section \ref{sec:original-dv}, we use the following \emph{indicator} or binary
+variables:
+\begin{gather}
+    \forall v \in V,\, \forall t \leq \gamma_v,\, \forall C \subseteq A,\;
+    \mxc \in \left\{ 0, 1 \right\}\label{eq:bip0}\\
+    \forall v \in V,\; y_v \in \left\{ 0, 1 \right\}\label{eq:bip0b}
+\end{gather}
+where: $\mxc = 1$ if coalition $C$ works on task $v$ at time $t$, and $0$ otherwise; $y_v
+= 1$ if task $v$ is completed, and $0$ otherwise. Specifying indicator variables for
+individual agents is not necessary, since they can be inferred from Equation
+\ref{eq:bip0}.
+
+\subsection{Constraints}\label{sec:bip-constraints}
+
+There are $3$ types of constraints: structural, temporal and spatial.
+
+\paragraph{Structural Constraints}
+
+At each time, at most one coalition can work on each task:
+\begin{equation}\label{eq:bip1}
+    \forall v \in V,\, \forall t \leq
+    \gamma_v,\; \sum_{C \subseteq A} \mxc \leq 1
+\end{equation}
+Equations \ref{eq:bip0} and \ref{eq:bip1} ensure that $\nexists \mxc : C \not\subseteq A$,
+and that the maximum coalition size is $|A|$.
+
+\paragraph{Temporal Constraints}
+
+Tasks can be completed only by their deadlines, and no agent can work on a task after its
+completion:
+\begin{gather}
+    \forall v \in V,\; y_v \leq 1\label{eq:bip2a}\\
+    \forall v \in V,\;
+    \left\lceil \sum_{t \leq \gamma_v}\, \sum_{C \subseteq A} u(C, v) \cdot \mxc
+    \right\rceil = \left\lceil w_v \cdot y_v \right\rceil\label{eq:bip2b}
+\end{gather}
+
+\paragraph{Spatial Constraints}
+
+An agent cannot work on a task before reaching its location. This identifies two cases:
+when an agent reaches a task from its initial location, and when an agent moves from one
+task location to another. The first case imposes that, for each task $v$, time $t \leq
+\gamma_v$ and coalition $C$, the variable $\mxc$ can be positive only if all agents in $C$
+can reach location $l_v$ at a time $t' < t$:
+\begin{equation}\label{eq:bip3}
+    \forall v \in V,\, \forall C \subseteq A,\;
+    \text{if } \hat{\rho} = \max_{a \in C} \rho(a, l_a^0, l_v) \leq \gamma_v
+    \text{ then }
+    \sum_{t \leq \hat{\rho}}\, \mxc = 0
+\end{equation}
+where $\hat{\rho}$ is the maximum time at which an agent $a \in C$ reaches $l_v$, from its
+initial location at time $t = 0$. Conditional constraints are usually formulated using
+auxiliary variables or the Big-M method \cite{wolsey2020}.
+However, such approaches further enlarge the mathematical program or can cause numerical
+issues (Section \ref{sec:cfstp-gaps}). Consequently, in the preprocessing step necessary
+to create our BIP, we can implement Equation \ref{eq:bip3} simply by excluding the
+variables that must be equal to $0$. That is, if $\hat{\rho} \leq \gamma_v$, we only
+declare the following variables: $\{ \mxc \}_{t \in [\hat{\rho} + 1, \gamma_v]}$.
+The second case requires that if an agent cannot work on two tasks consecutively, then it
+can work on at most one:
+\begin{equation}\label{eq:bip4}
+    \begin{gathered}
+    \forall v_1, v_2 \in V,\,
+    \forall C_1, C_2 \subseteq A \text{ such that } C_1 \cap C_2 \neq \emptyset,\\
+    \forall t_1 \leq \gamma_{v_1},\, \forall t_2 \leq \gamma_{v_2} \text{ such that }
+    t_1 + \max_{a \in C_1 \cap C_2} \rho(a, l_{v_1}, l_{v_2}) \geq t_2,\\
+    x_{v_1,\, t_1, C_1} + x_{v_2,\, t_2, C_2} \leq 1
+    \end{gathered}
+\end{equation}
+Hence, coalition $C_2$ can work on task $v_2$ only if all agents in $C_1 \cap C_2$ can
+reach location $l_{v_2}$ by deadline $\gamma_{v_2}$. Equation \ref{eq:bip4} also implies
+that an agent cannot work on multiple tasks at the same time.
+
+There are no synchronisation constraints \cite{nunes2017taxonomy}. Thus, when a task $v$
+is allocated to a coalition $C$, each agent $a \in C$ starts working on $v$ as soon as it
+reaches its location, without waiting for the remaining agents. This means that $v$ is
+completed by a temporal sequence of subcoalitions of $C$: $\exists S \subseteq P(C)$ such
+that $\forall C' \in S$, $\exists t \leq \gamma_v$, $x_{v,\, t,\, C'} = 1$, where $P(C)$
+is the power set of $C$.
+
+\subsection{Objective Function}\label{sec:bip-of}
+
+Let $\bm{x}$ be a \emph{solution}, that is, a value assignment to all variables, which
+defines the route and schedule of each agent. The objective is to find a solution that
+maximises the number of completed tasks:
+\begin{equation}\label{eq:bip}
+    \arg \max_{\bm{x}} \sum_{v \in V}\, y_v
+    \text{ subject to Equations \ref{eq:bip0} $-$ \ref{eq:bip4}}
+\end{equation}
+
+Both creating all decision variables (Section \ref{sec:decvar}) and finding an optimal
+solution exhaustively (Equation \ref{eq:bip}) may require to list all possible
+coalition allocations for each possible permutation of $V$, with a worst-case time
+complexity of:
+\begin{equation}\label{eq:comp}
+    O \left( |V|! \cdot 2^{|A|} \cdot \tmax \right)
+\end{equation}
+which is the same as the CFSTP formulation of Section \ref{sec:of}.
+
+\begin{theorem}\label{teo:eq}
+    Equation \ref{eq:bip} is equivalent to the original MIP of the CFSTP (Section
+    \ref{sec:mip}).
+\end{theorem}
+\begin{proof}
+    Since we use the original objective function (Equation \ref{eq:cfstpof}), below we
+    show how our constraints imply the original ones (Equations \ref{eq:mip0} $-$
+    \ref{eq:mip22}).
+
+    Completing tasks by their deadlines and allowing agents to work only on uncompleted
+    tasks implies that the total work done for each task $v$ is equal to $w_v$ if $v$ is
+    completed, and $0$ otherwise. Hence, Equations \ref{eq:bip2a}, \ref{eq:bip2b}
+    $\Rightarrow$ Equations \ref{eq:mip0}, \ref{eq:mip1}.
+
+    Equation \ref{eq:bip1} is equivalent to Equation \ref{eq:mip2}.
+
+    If at most one coalition can work on each task at each time, and an agent cannot
+    work on a task before reaching its location, then each agent can work on at most one
+    task at each time. Consequently, Equations \ref{eq:bip1}, \ref{eq:bip3} $\Rightarrow$
+    Equation \ref{eq:mip6}.
+
+    Equation \ref{eq:mip3} is not necessary because $t \leq \gamma_v$ for each $\mxc$
+    (Equation \ref{eq:bip0}).
+
+    If agent $a$ cannot work on task $v$ before reaching its location $l_v$, then it can
+    do so after finishing work on a previous task, or after reaching $l_v$ from its
+    initial location $l_0^a$. Furthermore, since the objective is to maximise the number
+    of completed tasks, if $v$ is allocated to $a$, then $a$ changes the status of its
+    service (from \emph{free} to \emph{working} and vice versa) exactly twice, and the
+    decision variables related to $a$ and $v$ are equal to $1$ only when $a$ works on $v$,
+    and $0$ otherwise. Thus, Equations \ref{eq:bip3} $-$ \ref{eq:bip} $\Rightarrow$
+    Equations \ref{eq:mip4}, \ref{eq:mip5}, \ref{eq:mip7} $-$ \ref{eq:mip9}.
+
+    If agent $a$ cannot work on two tasks consecutively, then it can work on at most one.
+    Therefore, $a$ cannot leave and reach the same task location, it can only reach a new
+    task location from exactly one location, and it can only leave a location to reach
+    exactly one task location. That is, Equation \ref{eq:bip4} $\Rightarrow$ Equations
+    \ref{eq:mip10} $-$ \ref{eq:mip12}.
+
+    Since task $v$ can only be completed by deadline $\gamma_v$, agent $a$ can work on $v$
+    only if it can reach its location $l_v$ by $\gamma_v$, and the objective is to
+    maximise the number of completed tasks, then: the coalition $C$ of which $a$ is a
+    member reaches $v$ only to complete it; $C$ works for at least $1$ unit of time on $v$
+    (assuming that $w_v \geq 1$, $\forall v \in V$), and each $a \in C$ reaches $l_v$ from
+    another task location or from its initial location $l_0^a$. Thus, Equations
+    \ref{eq:bip2b} $-$ \ref{eq:bip4}, \ref{eq:bip} $\Rightarrow$ Equations \ref{eq:mip15} $-$
+    \ref{eq:mip20}.
+
+    Equation \ref{eq:bip1} is equivalent to Equation \ref{eq:mip21}.
+
+    Since the original MIP assumes that the allocation process starts at $t = 1$ (Section
+    \ref{sec:original-dv}), Equation \ref{eq:bip3} $\Rightarrow$ Equation \ref{eq:mip22}. If
+    we remove this assumption, then Equation \ref{eq:mip22} is not necessary.
+\end{proof}
+Having significantly fewer constraints than the original MIP, our BIP can be used more
+effectively by exact algorithms based on branch-and-cut or branch-and-price \cite[Section
+$3.1.1$]{top2019}. A trivial way to solve the CFSTP would be to implement Equation
+\ref{eq:bip} with solvers such as CPLEX or GLPK. Although this would guarantee anytime and
+optimal solutions, it would also take exponential time to both create and solve our BIP
+(Equation \ref{eq:comp}). This limits this practice to offline contexts and very small
+problems. For example, using CPLEX $20.1$ with commodity hardware, and the test setup of
+\cite{ramchurn2010cfstp}, we can solve problems where $|A| \cdot |V| \leq 20$ in hours.
+With bigger problems, CPLEX depletes all memory ($8$ GB) and crashes.
+
+Another major issue with centralised generation of optimal solutions is that, in real-time
+domains such as disaster response, it can be computationally not feasible or economically
+undesirable, especially when the problem changes frequently (Section \ref{sec:pstat}). For
+these reasons, the next section presents a scalable, dynamic and distributed algorithm to
+solve the CFSTP.
+
+\section{A Scalable, Dynamic and Distributed CFSTP Algorithm}\label{sec:dcts}
+
+We propose a novel reduction of the CFSTP to a DynDCOP, then we show how CTS can solve the
+problem in this formulation. We use the DynDCOP formalism because it has proven largely
+capable of modelling disaster response problems (Section \ref{chap2:choice}).
+
+\subsection{Reduction of the CFSTP to a DynDCOP}\label{sec:reduction}
+
+Using Definition \ref{def:dyndcop}, we formalise a DynDCOP as a sequence $\mathcal{D} =
+\left\{ \mathcal{D}_t \right\}_{t \leq \tmax}$, where each $\mathcal{D}_t = (A^t, X^t,
+D^t, F^t)$ is a DCOP such that $A^t \subseteq A$, and:
+\begin{itemize}
+    \item $X^t = \{\chi_1^t, \dots, \chi_k^t\}$ is a set of $k = |A^t| \leq n$ variables,
+        where $\chi_i^t$ indicates the task performed by agent $a_i^t \in A^t$;
+    \item $D^t = \{D_1^t, \dots, D_k^t\}$ is a set of $k$ variable domains, such that
+        $\chi_i^t \in D_i^t$. A set $d = \{d_1, \dots, d_k\}$, where $d_i \in D_i^t$, is
+        called an \emph{assignment}. Each $d_i \in d$ is called the $i$-th \emph{variable
+        assignment} and is the value assigned to variable $\chi_i^t$;
+    \item $F^t = \{f_1^t, \dots, f_h^t\}$ is a set of $h \leq m$ functions, where $f_i^t$
+        represents the constraints on task $v_i^t$. In particular, each $f_i^t : D_{i_1}^t
+        \times \cdots \times D_{i_{h_i}}^t \to \mathbb{R}_{\geq 0}$ assigns a non-negative
+        real cost to each possible assignment to the variables $X_{h_i}^t \subseteq X^t$,
+        where $h_i \leq h$ is the arity of $f_i^t$.
+\end{itemize}
+The objective of $\mathcal{D}$ is to find an assignment that minimises all costs:
+\begin{equation}\label{eq:dcop}
+    \forall t \leq \tmax,\, \arg \min_{d \in D^t}
+    \sum_{f_i^t \in F^t} f_i^t(d_{i_1}, \dots, d_{i_{h_i}})
+\end{equation}
+It is typically assumed that if $\chi_i^t$ is in the scope of $f_j^t$, then agent $a_i^t$
+knows $f_j^t$ \cite[Section $4.2$]{fioretto2018survey}. To reduce the CFSTP to a DynDCOP,
+we specify $A^t$, $D^t$ and $F^t$ as follows. At time $t$, let $A^t$ be the set of free
+agents (Section \ref{sec:cfla1}), and let $V^t_{allocable}$ be the set of tasks that have
+not yet been completed. The domain of each variable $\chi_i^t$ is:
+\begin{equation}\label{eq:dyndcop-d}
+    D_i^t = \left\{ v \in V^t_{allocable} \text{ such that } t + \rho(a_i^t,
+    l_{a_i^t}, l_v) \leq \gamma_v \right\} \cup \left\{ \varnothing \right\}
+\end{equation}
+where $\varnothing$ means that no task is allocated to agent $a_i^t$. Hence, $A^t$
+satisfies the structural constraints, while $D_i^t$ contains all tasks that at time $t$
+can be allocated to $a_i^t$ satisfying the spatial constraints (Section
+\ref{sec:bip-constraints}). Let $\bm{x}_i \subseteq \bm{x}$ be a \emph{singleton
+solution}, that is, a solution to task $v_i$ (Section \ref{sec:bip-of}). At time $t$, let
+$\bm{x}_i^t \subseteq \bm{x}_i$ be a singleton solution corresponding to
+$f_i^t(d_{i_1}, \dots, d_{i_{h_i}})$, defined as follows. Each $x_{v_i, \, t,\, C} \in
+\bm{x}_i^t$ is such that $C$ is a subset of the agents that control the variables in
+the scope of $f_i^t$, while $x_{v_i,\, t,\, C} = 1$ if $d_{i_{h_i}} = v_i$, for each
+$h_i$-th agent in $C$, and $0$ otherwise. To satisfy the temporal constraints (Section
+\ref{sec:bip-constraints}), each $i$-th function is defined as follows:
+\begin{equation}\label{eq:costs}
+    f_i^t(d_{i_1}, \dots, d_{i_{h_i}}) =
+    \min_{\bm{x}_i^t,\, t' \leq \gamma_{v_i}}\, \left\lceil \sum_{s \leq t',\,
+    x_{v_i,\, s,\, C} \in \bm{x}_i^t} u(C, v) \right\rceil = \left\lceil w_v \right\rceil
+\end{equation}
+with the convention that $f_i^t(d_{i_1}, \dots, d_{i_{h_i}}) = +\infty$ if $v_i$ cannot be
+completed by deadline $\gamma_{v_i}$. Hence, the solution space of $\mathcal{D}$ satisfies
+all CFSTP constraints, while minimising all costs implies minimising the time required to
+complete each task (Equations \ref{eq:dcop} and \ref{eq:costs}), which implies maximising
+the number of completed tasks, as required by the objective function of the CFSTP
+(Equation \ref{eq:bip}).
+
+\subsection{Distributed CTS}
+
+Before introducing our distributed version of CTS (Section \ref{sec:cts}), we present the
+data structure and the communication protocol on which it is based.
+
+\begin{figure}[t]
+    \centering
+    \begin{adjustbox}{width=.45\textwidth}
+        \input{images/factor-graph-ex}
+    \end{adjustbox}
+    \caption[An example factor graph]{The factor graph of a DCOP with $2$ agents and $4$
+        tasks. In our formulation, a DCOP represents the state of a CFSTP at a certain
+        time, in which circles are variables of free agents, squares are cost functions of
+        uncompleted tasks, and each edge connects an agent to a task it can reach by its
+        deadline.}
+    \label{fig:fgex}
+\end{figure}
+
+To represent DCOPs, we use factor graphs (Definition \ref{def:fg}). As an example, Figure
+\ref{fig:fgex} shows the factor graph of the function $F(X) = f_1(\chi_1) + f_2(\chi_1,
+\chi_2) + f_3(\chi_1, \chi_2) + f_4(\chi_2)$. In a factor graph $G$, a solution is found
+by allowing nodes to exchange messages. Hence, to execute CTS on $G$, we have to define
+how nodes communicate and operate. Below, we present a communication protocol and
+algorithms for both variable and factor nodes. Based on the well-established formalism of
+\cite{yokoo1992}, the nodes communicate in the following way:
+\begin{itemize}
+    \item Node $i$ can message node $j$ only if $i$ knows the address of $j$\footnote{For
+        instance, the IP address of $j$, if the nodes are connected to the same network.}.
+        In our context, if $\chi_i^t$ is in the scope of $f_j^t$, then $\chi_i^t$ knows
+        the address of $f_j^t$, and vice versa;
+    \item Each node $i$ has a message queue $Q_i$, to which messages are delivered with a
+        finite delay;
+    \item Node $i$ can use the function \textsc{receive}() to dequeue a message from
+        $Q_i$, and the function \textsc{send}($j$, \texttt{illoc\_force}, \texttt{[args]})
+        to send a message to $j$. Node $j$ will receive a message in the format
+        \texttt{(sender, illoc\_force, [args])}, where \texttt{sender} is the identifier
+        of node $i$, \texttt{illoc\_force} is its illocutionary force, and \texttt{[args]}
+        is an optional list of arguments. An \emph{illocutionary force} is either an
+        information or a command \cite{vieira2007}.
+\end{itemize}
+We assume that the node of each function is controlled by an agent in its
+scope\label{fgas}. This agent can be chosen randomly or according to some criterion.
+Moreover, we assume that each agent can independently retrieve the system time (i.e., the
+current value of $t$) in constant time.
+
+Algorithm \ref{algo:d1} presents the operation of variable node $\chi_i^t$. If there is
+an uncompleted task $v_j^t$ that can be allocated to free agent $a_i^t$ (lines $1 - 3$),
+then variable node $\chi_i^t$ communicates to factor node $f_j^t$ the ability of $a_i^t$
+to work on $v_j^t$, also specifying the time at which it can reach and start working on it
+(lines $4 - 6$). After that, it waits until it gets a reply from $f_j^t$ or a
+predetermined time interval expires (lines $7 - 9$). If it receives the approval of
+$f_j^t$, then $v_j^t$ is allocated to $a_i^t$ (lines $10 - 11$). At line $2$, $v_j^t$ is
+chosen such that it is the closest to $a_i^t$ and $\gamma_{v_j^t}$ is the earliest
+deadline. Phase $1$ is completed after that each $\chi_i^t$ executes line $6$.
+
+\begin{algorithm}[t]
+    \DontPrintSemicolon
+    $\chi_i^t \gets \varnothing$ \Comment*[h]{\small the agent is initially \emph{free}}\;
+    $d_j \gets$ get task allocable to agent $a_i^t$ at time $t$ \Comment*[h]{\small
+    Algorithm \ref{algo:getTask}}\;
+    \If{$d_j \neq \varnothing$}{
+        $s_i \gets$ time at which agent $a_i^t$ can start working on task $d_j$\;
+        $f_j^t \gets$ factor node of $d_j$\;
+        %create edge to $f_j^t$\;
+        \textsc{send}($f_j^t$, \textsf{assignable}, $s_i$)\;
+        \textsf{msg} $\gets$ \textsc{nil}\;
+        \While{\normalfont\textsf{msg} not received from $f_j^t$ or not time out}{
+            \textsf{msg} $\gets$ \textsc{receive}()\;
+        }
+        \If{\normalfont\textsf{msg} $= (f_j^t, \text{\textsf{allocate}})$}{
+            $\chi_i^t \gets d_j$\;
+        }
+    }
+    \caption{CTS node of variable $\chi_i^t$\label{algo:d1}}
+\end{algorithm}
+
+Algorithm \ref{algo:d2} presents the operation of factor node $f_j^t$. The loop at lines
+$1 - 2$ is a synchronisation step that allows $f_j^t$ to know which agents in its
+neighbourhood can work on $v_j^t$. Lines $3 - 6$ enacts Phase $2$, while lines $7 - 9$
+update workload $w_{v_j}$.
+Hence, our factor graphs are synchronous networks, in which the factor nodes are the
+synchronisers \cite{lynch1996}.
+
+\begin{algorithm}[t]
+    \DontPrintSemicolon
+    \While{\normalfont not all neighbours sent an \textsf{assignable} message or not time out}{
+        \textsf{msg} $\gets$ \textsc{receive}()\;
+    }
+    $\Pi^t_{v_j} \gets$ list of all assignable agents sorted by arrival time to $v_j$\;
+    %\Comment*[h]{\small same as line $19$ of Algorithm \ref{algo:cts}}\;
+    $C^* \gets$ minimum coalition in $\Pi^t_{v_j}$ that can complete $v_j$ by $\gamma_{v_j}$
+    \Comment*[h]{\small Equation \ref{eq:costs}}\;
+    \For{$a_i^t \in C^*$}{
+        \textsc{send}($\chi_i^t$, \textsf{allocate})\;
+    }
+    $C^t_{v_j} \gets$ all agents working on $v_j$ at time $t$\;
+    \If{$C^t_{v_j} \neq \emptyset$}{
+        $w_{v_j} \gets w_{v_j} - u(C^t_{v_j}, v_j)$\;
+    }
+    \caption{CTS node of factor $f_j^t$\label{algo:d2}}
+\end{algorithm}
+
+We call \emph{Distributed CTS} (D-CTS) the union of Algorithms \ref{algo:d1} and
+\ref{algo:d2}. Each message has size $O(1)$, since it always contains a node
+address, a message flag and an integer. At time $t$, each variable node $\chi_i^t$ sends
+at most $1$ message (line $6$ in Algorithm \ref{algo:d1}), while each factor node $f_j^t$
+sends $O(|A|)$ messages (lines $5 - 6$ in Algorithm \ref{algo:d2}). Assuming that all
+tasks can be completed, the total number of messages sent is:
+\begin{equation}\label{eq:dcts-co}
+    O(|A| + |V| \cdot |A|) = O(|V| \cdot |A|)
+\end{equation}
+The runtime of Algorithm \ref{algo:d1} is $O(|V|)$, because line $2$ selects a task in the
+neighbourhood of an agent. The runtime of Algorithm \ref{algo:d2} is $O(|A| \log |A|)$,
+due to the sorting at line $3$ \cite{cormen2009}.
+Since both algorithms are executed up to $\tmax$ times, the overall time complexity of
+D-CTS is the same as CTS (Equations \ref{eq:comp1} and \ref{eq:comp2}).
+The advantages of D-CTS are:
+\begin{enumerate}
+    \item
+        It is anytime, since it decomposes a CFSTP into a set of subproblems (Section
+        \ref{sec:cts}). This property is not trivial to guarantee in distributed systems
+        \cite{zivan2014}, and is missing in main DCOP algorithms, such as ADOPT, DPOP,
+        OptAPO and Max-Sum (Table \ref{t:dcop_chars});
+    \item
+        It is self-stabilising (Definition \ref{def:self-stabilising}), being guaranteed
+        to converge (Theorem \ref{teo:convergence}), and given that each agent can only
+        work on a new task after completing the one to which it is currently assigned
+        (Algorithm \ref{algo:d1});
+    \item
+        The phase-based design has $2$ performance benefits. First, the algorithm is not
+        affected by the structure of factor graphs. For instance, in a cyclic graph like
+        the one in Figure \ref{fig:fgex}, where the same $a > 1$ tasks can be allocated to
+        the same $b > 1$ agents, inference-based DCOP algorithms (e.g., Max-Sum variants)
+        in general are not guaranteed to converge, unless they are augmented with specific
+        techniques (e.g., damping or ADVP). Second, the algorithm is robust to
+        \emph{disruptions}, that is, the addition or removal of factor graph nodes
+        \cite[Section $6.2$]{ramchurn2010fms}. Disruptions are typical of dynamic
+        environments (Section \ref{sec:pstat}). For instance, in disaster response, tasks
+        are removed if some victims have perished, and are added if new fires are
+        discovered. Likewise, new agents can be added to reflect the availability of
+        additional workforce, while existing ones are removed when they deplete their
+        resources, or are unable to continue due to sustained damages. Unlike D-CTS, the
+        majority of DCOP algorithms (e.g., Max-Sum and DPOP) cannot handle disruptions,
+        unless they are properly augmented (e.g., FMS and S-DPOP);
+    \item
+        Unlike most DCOP algorithms (e.g., ADOPT and DPOP), the communication overhead
+        (i.e., the number of messages exchanged) is at most linear (Equation
+        \ref{eq:dcts-co}), and each agent does not need to maintain an information graph
+        of all other agents;
+    \item
+        Finally, performance does not depend on any tuning parameters, as is the case with
+        other DCOP algorithms (e.g., DSA, AED and DPSA).
+\end{enumerate}
+Since each factor node is controlled by an agent (Page \pageref{fgas}), D-CTS is not fully
+distributed, but \emph{partially centralised}. However, this is a typical assumption in
+DCOP algorithms that use factor graphs or pseudo-trees, as it allows to explicitly handle
+$k$-ary constraints \cite[Section $4.2$]{fioretto2018survey}. This is also the case for
+main algorithms such as AFB, ADOPT, DPOP and Max-Sum (Section \ref{sec:dcop0}).
+Partial centralisation improves local coordination and thus overall performance, but
+reduces privacy \cite[Section $4.3.1$]{fioretto2018survey}.
+In cooperative coordination, and particularly in disaster response, this is generally not
+an issue.
+
+Algorithms \ref{algo:d1} and \ref{algo:d2} resemble a \emph{single-item auction}
+\cite{dias2006}, where, for each time $t$ and task $v_j$: the \emph{bidders} are the
+agents in $A^t$ that can reach $v_j$ by $\gamma_{v_j}$; the \emph{bid} of an agent is the
+time at which it can start working on $v_j$; the \emph{auctioneer} is the agent
+controlling factor node $f^t_j$, which closes the auction by sending \textsf{allocate}
+messages to selected agents.
+However, there are two differences from a classic auction. First, $v_j$ can be
+allocated to more than one agent at once.
+Second, agents cannot be overburdened with evaluation problems, since each bidder is
+interested in at most one task, and therefore each auctioneer receives as few bids as
+possible. In other words, the communication overhead is minimised.
+This advantage is due to our reduction of the CFSTP to a DynDCOP (Section
+\ref{sec:reduction}), in which the search space contains only feasible solutions.
+
+\section{Empirical Evaluation in Dynamic Environments}\label{sec:dcts-tests}
+
+We created a dataset\footnote{\url{https://doi.org/10.5281/zenodo.4728012}} with $347588$
+tasks using open records published by the \emph{London Fire Brigade} (LFB) over a period
+of $11$ years. Then, we wrote a test framework in
+Java\footnote{\url{https://doi.org/10.5281/zenodo.4764646}} and compared D-CTS with
+DSA-SDP, a state-of-the-art incomplete, synchronous and search-based DCOP algorithm
+(Page \pageref{sec:dsa}).
+
+We adapted DSA-SDP to solve our DynDCOP formulation (Section \ref{sec:reduction}), which
+finds a CFSTP solution by solving multiple DCOPs. Hence, being a DCOP algorithm, its
+performance is not penalised in our test framework. We chose it as our baseline because,
+similarly to D-CTS, it has a polynomial coordination overhead and is scalable (Table
+\ref{t:dcop_chars}). We kept the parameters of \cite{zivan2014} and ran
+$|V^t_{allocable}|$ iterations at each time $t$, since we found that, in our test
+framework, running more iterations can only marginally improve the solution quality, while
+requiring a significant increase in communication overhead and time complexity. Below, we
+detail our setup and discuss the results.
+
+\subsection{Setup}\label{sec:setup}
+
+Let $\mathcal{N}$ and $\mathcal{U}$ denote the normal and uniform distribution,
+respectively. A test configuration consists of the following parameters:
+\begin{itemize}
+    \item Since there are currently $150$ identical London fire engines in operation, $|A|
+        = 150$ for each problem. All agents have the same speed;
+        % It is reasonable to assume a fixed speed, because if an algorithm is better than
+        % others with homogeneous agent speeds, then it is better with heterogeneous agent
+        % speeds as well.
+    \item $|V| = |A| \cdot k$, where $k \in \{ 1, \dots, 20 \}$. Thus, problems have up to
+        $3000$ tasks;
+    \item The demand of each task $v$ is defined by a record dated between $1$ January
+        $2009$ and $31$ December $2020$. More precisely, $\gamma_v$ is the attendance time
+        (in seconds) of the firefighters, and since the median attendance time in the
+        whole dataset is about $5$ minutes, we set $w_v \sim \mathcal{U}(10, 300)$ to
+        simulate wide-ranging workloads;
+    \item For each task-to-agent ratio $|V|/|A|$, the nodes of a problem are chosen in
+        chronological order. That is, the first problem always starts with record $1$, and
+        if a problem stops at record $q$, then the following one will use records $q + 1$
+        to $q + 1 + |V|$;
+    \item The locations are latitude-longitude points, and the travel time $\rho(a, l_1,
+        l_2)$ is given by the great-circle distance in kilometers between locations $l_1$
+        and $l_2$, divided by the (fixed) speed of agent $a$;
+    \item In addition to task locations, $L$ contains the locations of the $103$ currently
+        active London fire stations. In each problem, each agent starts at a fire station
+        defined by the record of a task.
+\end{itemize}
+Regardless of its individual features, each agent may perform differently in different
+coalitions, due to the interaction with other agents. To generate coalition values, we
+start by taking from \cite[Section $4$]{rahwan2012} the following well-known CSG
+distributions:
+\begin{enumerate}
+    \item \emph{Normally Distributed Coalition Structures} (NDCS): $u(C, v) \sim
+        \mathcal{N}(|C|, \sqrt[4]{|C|})$;
+    \item \emph{Agent-based}: each agent $a$ has a value $p_a \sim \mathcal{U}(0,
+        10)$ representing its individual performance and a value $p_a^C \sim
+        \mathcal{U}(0, 2 \cdot p_a)$ representing its performance in coalition
+        $C$. The value of a coalition is the sum of the values of its members:
+        $u(C, v) = \sum_{a \in C} p_a^C$.
+\end{enumerate}
+Then, we decrease each $\mu_v = u(C, v)$ by values $r$ and $q$, both sampled from
+$\mathcal{U}(\mu_v / 10, \mu_v / 4)$ with probability $\gamma_v/(\tmax + 1)$ and $|C|/(|A|
++ 1)$, respectively. The perturbation $r$ simulates real-time domains where the later
+$\gamma_v$ is, the lower the benefit of performing $v$ \cite{stankovic2013edf}. The
+perturbation $q$ simulates situations where the more agents there are, the greater the
+likelihood of congestion and thus of reduced performance, as it can happen in large-scale
+robot swarms \cite{guerrero2017}. We call the resulting distributions UC\_NDCS and
+UC\_Agent-based, where UC means \emph{Urgent and Congested}. NDCS assigns lower values to
+solutions containing fewer coalitions \cite{rahwan2009}, while Agent-based does the
+opposite by definition. Both distributions are neither superadditive nor subadditive
+\cite{rahwan2015survey}. Hence, it is not possible to define a priori an optimal coalition
+for each task.
+We ensured consistency between the results of the algorithms by computing and storing
+coalition values in hash maps. More precisely, the maps were lazy-initialised and shared
+among all problems.
+
+During the solution of each problem, we gradually removed agents to simulate
+\emph{degradation} scenarios. The removal rate was calculated with a Poisson cumulative
+distribution function $Pois_{CDF}(\bm{a}, \lambda)$, where $\bm{a}$ contains all
+firefighter arrival times in the dataset, and the rate $\lambda$ is the average number of
+incidents per hour and per day. For each test configuration and algorithm, we solved
+$100$ problems and measured the median and $95\%$ confidence interval of: number of
+messages sent; \emph{network load}, or the total size of messages sent; number of
+\emph{Non-Concurrent Constraint Checks} (NCCCs) \cite{meisels2007}; percentage of tasks
+completed, and CPU time\footnote{Based on an Intel Xeon E5-2670 processor ($2.6$ GHz, $8$
+threads).}.
+% We do not measure problem completion times, because that makes sense only in static
+% environments.
+
+\subsection{Results}\label{sec:rres}
+
+\begin{figure}[t]
+    \centering
+    \begin{adjustbox}{width=\textwidth}
+        \input{images/c2t1}
+    \end{adjustbox}
+    \caption[Comparison between D-CTS and DSA-SDP]{Comparison between D-CTS and DSA-SDP in
+        our test framework. Each subfigure denotes a coalition value distribution, while
+        each point is the median and $95\%$ confidence interval over $100$ problems of the
+        percentage of tasks completed. The X-axis is the task-to-agent ratio.}
+    \label{fig:dcts-t}
+\end{figure}
+
+% UC_AGENT_BASED 1.35 \pm [0.29, 0.03] -> 3.03% \pm [34.98, 1.2]
+% UC_NDCS 1.6 \pm [0.26, 0.06] -> 4.76% \pm [41.24, 2.76]
+% Overall 1.52 \pm [0.33, 0.21] -> 3.79% \pm [42.22, 1.96]
+Figure \ref{fig:dcts-t} and \ref{fig:dcts-t2} show our results. D-CTS completes $3.79\%
+\pm [42.22\%, 1.96\%]$ more tasks than DSA-SDP (Figure \ref{fig:dcts-t}). For both
+algorithms, the performance drops rapidly as the task-to-agent ratio increases. This is
+due to the Urgent component in the coalition value distributions: the higher the ratio,
+the higher the median task completion time.
+Conversely, the Congested component can reduce the percentage of tasks completed more in
+problems with smaller task-to-agent ratios, where agents can form larger coalitions and
+thus increase the likelihood of congestion.
+
+The network load of DSA-SDP is $0.59 \pm [0.41, 0.02]$ times that of D-CTS (Figure
+\ref{fig:dcts-t2}b). This is because a DSA-SDP message contains only a task address,
+while a D-CTS message also contains a binary flag and an integer (Section
+\ref{sec:dcts}). In Java, an address requires $8$ bytes, a flag requires $1$ byte, and
+an integer requires $1 - 4$ bytes. Hence, while a DSA-SDP message always requires $8$
+bytes, a D-CTS message requires $10 - 13$ bytes. This is line with the results obtained.
+However, the situation would be reversed if we performed $1000$ DSA-SDP iterations as
+suggested in \cite{zhang2005}, since $median(\{ |V^t_{allocable}| \}_{t \leq \tmax}) \ll
+1000$ in our tests.
+
+\begin{figure}[t]
+    \centering
+    \begin{adjustbox}{width=\textwidth}
+        \input{images/c2t2}
+    \end{adjustbox}
+    \caption[Ratio of DSA-SDP performance to D-CTS performance]{%
+        Ratio of DSA-SDP performance to D-CTS performance. Each subfigure denotes a
+        performance metric $m$, while each point is the median and $95\%$ confidence
+        interval over $100$ problems of $m_a / m_b$, where $m_a$ (resp. $m_b$) is the
+        value of DSA-SDP (resp. D-CTS) for $m$. The X-axis is the task-to-agent ratio.}
+    \label{fig:dcts-t2}
+\end{figure}
+
+The remaining metrics put DSA-SDP at a distinct disadvantage (Figure \ref{fig:dcts-t2}a,
+c, d). The overload compared to D-CTS is $41.72 \pm [12.45, 0.42]$ times more messages
+sent, $72.78 \pm [34.79, 27.79]$ times more NCCCs, and $13.82 \pm [4.52, 3.71]$ times more
+CPU time. This is explained as follows. While the number of messages sent is $O(|V| \cdot
+|A|)$ in D-CTS (Section \ref{sec:dcts}), it is $O(|V| \cdot |A|^2)$ in DSA-SDP, since the
+agents exchange their assignments\footnote{To align with Table \ref{t:dcop_chars}, we have
+that $t = |V|$, and $n = l = |A|$.} \cite{zivan2014}. In D-CTS, analysing in sequence the
+agents that can be assigned to each task (line $4$ in Algorithm \ref{algo:d2}) requires
+$O(|V| \cdot |A|)$ NCCCs. DSA-SDP does a similar analysis, but for each message exchanged
+between two agents, which requires $O(|V|^2 \cdot |A|^2)$ NCCCs. Finally, the time
+complexity of DSA-SDP is $O(\tmax \cdot |V| \cdot |A|^2)$, where $O(|V| \cdot |A|)$ is
+required by the message exchange phase at each time, and $O(|A|)$ is required by each
+agent to calculate the assignment costs (Equation \ref{eq:costs}). Hence, DSA-SDP is
+asymptotically slower than D-CTS (Equations \ref{eq:comp1} and \ref{eq:comp2}). Overall,
+D-CTS took $525 \pm [281, 482]$ ms, while DSA-SDP took $6.97 \pm [5.84, 6.2]$ seconds. In
+accordance with the above, the ratio of DSA-SDP performance to D-CTS performance tends to
+increase with regard to CPU time, and to decrease with regard to the other metrics.
+
+In a dynamic environment, desirable features of a distributed algorithm include being
+robust to disruptions and minimising communication overhead (Section \ref{sec:dcts}).
+The latter feature is particularly important in real-world domains such as disaster
+response, where agent communication can be costly (i.e., not free-comm environments,
+Section \ref{sec:mdp}) or there may be operational constraints, such as low bandwidth or
+limited network topology (e.g., sparse robot swarms searching for shipwrecks on the
+seabed, or monitoring forest fires \cite{tarapore2020}). In our tests, compared to the
+state-of-the-art DSA-SDP, D-CTS achieves a slightly better solution quality (Figure
+\ref{fig:dcts-t}), and is one order of magnitude more efficient in terms of communication
+overhead and time complexity (Figure \ref{fig:dcts-t2}). This affirms its effectiveness as
+a scalable and distributed CFSTP algorithm for dynamic environments.
+
+\section{Summary}
+
+We proposed a novel and minimal BIP of the CFSTP, and demonstrated its equivalence with
+the original MIP formulation (Section \ref{sec:mip}). Based on a novel reduction of the
+CFSTP to a DynDCOP, we also created D-CTS, a distributed version of CTS that preserves its
+properties (anytime, convergent, scalable) and is self-stabilising. We defined a
+large-scale CFSTP dataset, as well as a dynamic test framework, and empirically showed
+that D-CTS has slightly better performance than the state-of-the-art DSA-SDP, while having
+significantly lower communication overhead and time complexity. Having filled the main
+gaps in the literature, in order to meet all our research objectives (Section
+\ref{sec:objectives}), the next and final chapter will focus on the main limitations of
+the CFSTP model itself.

@@ -1,0 +1,508 @@
+\chapter{Background}\label{chap:background}
+
+In the previous chapter, we have seen that the CFSTP has been tackled using approaches
+from all fields of research reviewed
+\cite{ramchurn2010cfstp,ramchurn2010fms,ramchurn2015a,baker2016,nelke2020,tkach2021}. As
+shown in Chapter \ref{chap:intro}, and as will also be evident below, the reason is that
+it generalises or shares similarities with classic combinatorial optimisation problems.
+
+This chapter will serve as the basis for the rest of the thesis. In Section
+\ref{sec:cfstp}, we present an improved version of the constraint program of the CFSTP
+given by \cite{ramchurn2010cfstp}. More precisely, we extend the definition of coalition
+value, define the constraints with fewer and simpler equations, and introduce the concept
+of \emph{solution degree}. In Section \ref{sec:cfla}, we illustrate CFLA, the
+state-of-the-art CFSTP algorithm. In Chapter \ref{chap:contrib1}, we improve the design of
+CFLA, then we eliminate its limitations by formulating a novel algorithm. Finally, we give
+the original \emph{Mixed Integer Program} (MIP) \cite{wolsey2020} of the CFSTP in Section
+\ref{sec:mip}, which will be shown to be equivalent to a novel and significantly shorter
+program in Chapter \ref{chap:contrib2}.
+
+\section{The CFSTP Model}\label{sec:cfstp}
+
+We first give our basic definitions (Section \ref{sec:defs}), then characterise coalition
+allocation and coalition values (Sections \ref{sec:ca} $-$ \ref{sec:cv}), and finally give
+the constraints (Section \ref{sec:constraints}) and the objective function of the CFSTP
+(Section \ref{sec:of}).
+
+\subsection{Basic Definitions}\label{sec:defs}
+
+Let $V = \{ v_1, \dots, v_m \}$ be a set of $m$ tasks and $A = \{ a_1, \dots, a_n \}$ be a
+set of $n$ agents. Let $L$ be the finite set of all possible task and agent locations.
+Time is denoted by $t \in \mathbb{N}$, starting at $t = 0$, and agents travel or complete
+tasks with a base time unit of $1$. The time units needed by an agent to travel from one
+location to another are given by the function $\rho : A \times L \times L \rightarrow
+\mathbb{N}$. Having $A$ in the domain of $\rho$ allows to characterise different agent
+features (e.g., speed or type). Let $l_v$ be the fixed location of task $v$, and let
+$l_a^t \in L$ be the location of agent $a$ at time $t$, where $l_a^0$ is its initial
+location and is known a priori.
+Each task $v$ has a \emph{demand} $(\gamma_v, w_v)$ such that $\gamma_v$ is the
+\emph{deadline} of $v$, or the time until which agents can work on $v$
+\cite{nunes2017taxonomy}, and $w_v \in \mathbb{R}_{\geq 0}$ is the \emph{workload} of $v$,
+or the amount of work required to complete $v$.
+We denote the location of agent $a$ at time $t$ by $l_a^t \in L$, the
+times at which $a$ starts and finishes working on task $v$ by $s_a^v \in
+[0, \gamma_v]$ and $f_a^v \in [s_a^v, \gamma_v]$, respectively, and the \emph{maximum
+problem time} by $\tmax = \max_{v \in V} \gamma_v$.
+
+\subsection{Coalition Allocations}\label{sec:ca}
+
+A subset of agents $C \subseteq A$ is called a \emph{coalition}. At time $t$, the
+rationale for allocating coalition $C$ to task $v$ is that $C$ completes $v$ in the fewest
+time units. An \emph{agent allocation} is denoted by $\alloc{a}{t}$ and represents the
+fact that agent $a$ works on task $v$ at time $t$. The \emph{set of all agent allocations}
+is denoted by:
+\begin{equation}
+    T = \left\{ \alloc{a}{t} \right\}_{a \in A,\, v \in V,\, t \in [0,\, \tmax]}
+\end{equation}
+and contains all possible agent allocations.
+A \emph{coalition allocation} is denoted by $\alloc{C}{t}$ and represents the fact that
+coalition $C$ works on task $v$ at time $t$. Given a set of agent allocations $T'
+\subseteq T$, and a time $t' \leq \tmax$, the \emph{set of coalition allocations
+corresponding to} $T'$ over the time period $[0, t']$ is denoted by:
+\begin{equation}\label{eq:gtp}
+    \Gamma(T', t') = \left\{ \tau_t^{C \rightarrow v} \, | \, C = \left\{ a\; | \;
+    \tau_t^{a \rightarrow v} \in T' \right\}, t \leq t' \right\}
+\end{equation}
+Furthermore, the \emph{set of all coalition allocations} is denoted by:
+\begin{equation}
+    \Gamma = \Gamma(T, \tmax)
+\end{equation}
+Similar to $T$, $\Gamma$ contains all possible coalition allocations.
+An agent allocation $\alloc{a}{t}$ is also denoted as a \emph{singleton coalition
+allocation} $\alloc{\{a\}}{t}$.
+
+\subsection{Coalition Values}\label{sec:cv}
+
+A subset of agents $C \subseteq A$ is called a \emph{coalition}. Each coalition
+allocation $\alloc{C}{t}$ has a \emph{coalition value}, given by the function\footnote{In
+cooperative game theory, this is called a \emph{characteristic function} \cite[Section
+$2.1$]{chalkiadakis2011}.} $u : P(A) \times V \rightarrow \mathbb{R}_{\geq 0}$, where
+$P(A)$ is the power set of $A$.
+The value of $u(C, v)$ expresses how well the agents in $C$ work together on $v$, and the
+workload $w_v$ decreases by $u(C, v)$ at each time.
+\iffalse
+Coalitions need not to be super-additive. Tasks are heterogeneous, in the sense that
+they may have different workloads and deadlines.
+\fi
+
+\subsection{Constraints}\label{sec:constraints}
+
+There are $3$ types of constraints: structural, temporal and spatial. Structural
+constraints require that each task $v$ can be allocated to only one coalition at a time.
+This is characterised by the following sets:
+\begin{equation}\label{eq:c0}
+    \forall v \in V, \Gamma_v = \left\{ \Gamma' \subseteq \Gamma :
+    \alloc{C_1}{t}, \alloc{C_2}{t} \in \Gamma' \Rightarrow C_1 = C_2 \right\}
+\end{equation}
+With an abuse of notation, we write $\alloc{C}{t} \in \Gamma_v$
+to indicate that $\alloc{C}{t}$ belongs to an unspecified set of $\Gamma_v$.
+\iffalse
+In other words, if $\alloc{a_1}{t}$, $\alloc{a_2}{t} \in T$, then $\alloc{ \{ a_1, a_2
+\}}{t} \in \Gamma_v$.
+\fi
+Temporal constraints require that each task $v$ can be completed only by its deadline
+$\gamma_v$. This is characterised by the function $\Delta : V \times \Gamma \rightarrow
+\{0, 1 \}$, defined as follows:
+\begin{equation}\label{eq:t1}
+    \Delta(v, \Gamma) =
+    \begin{cases}
+        1 \text{,} & \quad \text{if }\, \exists\, t \leq \gamma_v :
+        \sum_{t' \leq t \text{, } \alloc{C}{t'} \in \Gamma_v} u(C, v) \geq w_v\\
+        0 \text{,} & \quad \text{otherwise}
+    \end{cases}
+\end{equation}
+Equation \ref{eq:t1} utilises $\Gamma_v$ (Equation \ref{eq:c0}) to count only coalition
+allocations that satisfy the structural constraints.
+Spatial constraints require that an agent will not start working on a task
+before reaching it. This is characterised as follows:
+\begin{gather}
+    \forall a \in A,\, \forall v \in V, \forall t \leq \gamma_v,\; s_a^v \geq t +
+    \rho(a, l_a^t, l_v)\label{eq:s1}\\
+    \forall a \in A, \forall v_1, v_2 \in V,\; f_a^{v_1} + \rho(a, l_{v_1},
+    l_{v_2}) \leq s_a^{v_2}\label{eq:s2}
+\end{gather}
+A set of agent allocations $T' \subseteq T$ is called \emph{legal} if it exists
+a time $t' \leq \tmax$ such that $\Gamma(T', t')$ satisfies Equation \ref{eq:t1}.
+A set of coalition allocations $\Gamma' \subseteq \Gamma$ that satisfies
+Equations \ref{eq:t1} $-$ \ref{eq:s2} is called \emph{feasible}. Consequently, at time
+$t$, if $\tau_{t}^{C_1 \rightarrow v_1}$ and $\tau_{t}^{C_2 \rightarrow v_2}$ are feasible
+coalition allocations and $l_{v_1} \neq l_{v_2}$, then $C_1 \cap C_2 = \emptyset$.
+
+There are no synchronisation constraints \cite{nunes2017taxonomy}: when a task $v$
+is allocated to a coalition $C$, each agent $a \in C$ starts working on $v$ as soon as it
+reaches $l_v$. % without waiting for the remaining agents.
+Hence, $v$ is completed by a temporal sequence of subcoalitions of $C$.
+
+\subsection{Objective Function}\label{sec:of}
+
+The objective function of the CFSTP is to find a set of feasible coalition
+allocations that maximises the number of completed tasks:
+\begin{equation}
+    \arg \max_{\substack{\Gamma' \subseteq \Gamma\\\Gamma'
+    \text{feasible}}}\; \sum_{v \in V} \Delta(v, \Gamma') \label{eq:of}
+\end{equation}
+To solve Equation \ref{eq:of}, an exhaustive search may require to verify all the possible
+coalition allocations until $\tmax$. Consequently, the time complexity of
+searching for an optimal solution is:
+\begin{equation}\label{eq:cfstpcomp}
+    O \left( |V|! \cdot 2^{|A|} \cdot \tmax \right)
+\end{equation}
+A set of feasible coalition allocations $\Gamma' \subseteq \Gamma$ is called a
+\emph{solution with degree $k$} if $\sum_{v \in V} \Delta(v, \Gamma') = k$.
+Hence, an argument of Equation \ref{eq:of} is a solution with the highest degree. Since
+it generalises the TOP (Figure \ref{fig:relationships}), the CFSTP is NP-hard
+\cite{papadimitriou1993}.
+
+\section{The CFLA Algorithm}\label{sec:cfla}
+
+In this section, we report the concept of CFLA and the procedures of which it is composed.
+CFLA has $4$ phases, but \cite[Section $6$]{ramchurn2010cfstp} describes them in $3$
+procedures. For readability purposes, we describe them in $4$.
+
+\subsection{The Concept of CFLA}\label{sec:cfla_gen}
+
+CFLA is a centralised, anytime and greedy algorithm that solves Equation \ref{eq:of} by
+maximising the working time of agents and minimising the time required by coalitions
+to complete tasks. It is divided into $4$ phases:
+\begin{enumerate}
+    \item Defining the legal agent allocations (Section \ref{sec:cfla1});
+    \item For each task $v$, choosing the best coalition $C$ (Section \ref{sec:cfla2});
+    \item For each task $v$, doing a $1$-step look-ahead (Section \ref{sec:cfla3}) to
+        define its \emph{degree} $\delta_v$, or the number of tasks that can be completed
+        after the completion of $v$;
+    \item At each time $t \leq \tmax$, allocating a task not yet completed and with the
+        highest degree (Section \ref{sec:cfla4}).
+\end{enumerate}
+
+\subsection{Phase 1: Defining the Legal Agent Allocations}\label{sec:cfla1}
+
+At time $t$, Algorithm \ref{algo:alloc} determines which free agents\footnote{That is,
+agents who neither are travelling to nor working on a task.} $A^t_{free}$ can reach
+which uncompleted tasks $V_{unc}$ by their deadlines. The resulting set of legal
+agent allocations is denoted by $\text{Leg}_t$.
+
+\begin{algorithm}[t]
+  \DontPrintSemicolon
+  \KwIn{time $t$}
+  $\text{Leg}_t \gets \emptyset$ \Comment*[h]{\small the set of legal agent allocations at
+  time $t$}\;
+  \For(\Comment*[h]{\small for each free agent $a$}){$a \in A^t_{free}$}{
+      \For(\Comment*[h]{\small for each uncompleted task $v$}){$v \in V_{unc}$}{
+          \If(\Comment*[h]{\small if $a$ can reach $v$ at $t$ by $\gamma_v$}){$t +
+              \rho(a, l_a^t, l_v) \leq \gamma_v$}{
+              $\text{Leg}_t \gets \text{Leg}_t \cup \{ \alloc{a}{t'} \}_{t + \rho(a,
+              l_a^t, l_v) \leq t' \leq \gamma_v}$\;
+          }
+      }
+  }
+  \Return $\text{Leg}_t$\;
+  \caption{\textsf{getLegalAgentAllocations} (Phase $1$ of CFLA)\label{algo:alloc}}
+\end{algorithm}
+
+\subsection{Phase 2: Selecting the Best Coalition for Each Task}\label{sec:cfla2}
+
+\begin{algorithm}[t]
+  \DontPrintSemicolon
+  \KwIn{task $v$, a set of legal agent allocations $\text{Leg}_t$}
+  $C^*_v \gets \emptyset$ \Comment*[h]{\small an ECF coalition}\;
+  Using $\text{Leg}_t$, define $\Gamma(T', \gamma_v)$ as in Equation \ref{eq:gtp}\;
+  \tcp*[h]{\small minimise $|C|$, where $C$ can complete $v$ by its deadline $\gamma_v$}\;
+  Find $minsize = \min_{\tau_t^{C \to v} \in \Gamma(T', \gamma_v)} |C|$ where
+  $\sum_{\tau_{t'}^{C \to v} \text{, } t \leq t' \leq \gamma_v} u(C, v) \geq w_v$\;
+  $t^{\min}_v \gets \gamma_v$\;
+  \tcp*[h]{\small loop through all possible coalitions of size $minsize$}\;
+  \For{$\tau_t^{C \to v} \in \Gamma(T', \gamma_v)$ \textnormal{where} $|C| = minsize$}{
+      \If(\Comment*[h]{\small $C$ can complete $v$ by its deadline $\gamma_v$}){$\sum_{\tau_{t'}^{C \to v} \text{, } t \leq t' \leq \gamma_v} u(C, v) \geq 0$}{
+          \tcp*[h]{\small minimum time at which $C$ can complete $v$}\;
+          $t_{\textnormal{minmax}} \gets \min_{t_{\max}} \left( w_v - \sum_{\tau_{t'}^{C \to v} \text{, } t \leq t' \leq
+          t_{\max}} u(C, v) \right)$\;
+          \If(\Comment*[h]{\small check if $C$ is the new best
+              coalition}){$t_{\textnormal{minmax}} < t_v^{\min}$}{
+              $t^{\min}_v = t_{\textnormal{minmax}}$\;
+          $C^*_v \gets C$\;
+          }
+      }
+  }
+  \Return $C^*_v$\;
+  \caption{\textsf{ECF} (Phase $2$ of CFLA)\label{algo:ecf}}
+\end{algorithm}
+
+Given a task $v$ and a set of legal agent allocations $\text{Leg}_t$ (computed by Algorithm
+\ref{algo:alloc}), Algorithm \ref{algo:ecf} returns an \emph{Earliest Completion First}
+(ECF) coalition $C^*_v$ that can be allocated to $v$. In other words, $C^*_v$ is chosen
+such that the completion time of $v$ is minimised and the agent in $C^*_v$ become free to
+work on the remaining uncompleted tasks as soon as possible. This algorithm is myopic
+\cite[Section $6.1$]{ramchurn2010cfstp}, since it does not consider the system status
+after that $C^*_v$ would complete $v$. For this reason, Ramchurn et al. introduced the
+concept of task degree (Section \ref{sec:cfla_gen}) and developed the look-ahead technique
+presented below.
+
+\subsection{Phase 3: Defining the Degree of Each Task}\label{sec:cfla3}
+
+\begin{algorithm}[t]
+  \DontPrintSemicolon
+  \KwIn{task $v$, an ECF coalition $C^*_v$ of $v$, current solution $\Gamma'$}
+  $\delta_v \gets 0$ \Comment*[h]{\small the degree of $v$}\;
+  $f_v \gets $ time at which $C^*_v$ completes $v$\;
+  \For{$v_2 \in V_{unc} \setminus \{ v \}$}{
+      $A_{free}^{f_v} \gets$ agents that are free at $f_v$ \Comment*[h]{\small
+      derived from $C^*_v$ and $\Gamma'$}\;
+      $A^{d_{v_2}} \gets$ select from $A_{free}^{f_v}$ all agents that can reach $v_2$
+      by $d_{v_2}$\;
+      $i \gets 1$\;
+      \While{$i \leq |A^{d_{v_2}}|$}{
+          \For{$C \in$ \textnormal{all combinations of $i$ agents in} $A^{d_{v_2}}$}{
+              \If(\Comment*[h]{\small if $C$ can complete $v_2$}){$\sum_{\alloc{C'}{t} \in
+              \Gamma_v \text{, } C' \subseteq C \text{, } t \in \left[ f_v, d_{v_2}
+              \right]} u(C, v) \geq w_v$}{
+                  $\delta_v \gets \delta_v + 1$\;
+                  $i \gets |A^{d_{v_2}}|$ \Comment*[h]{\small break external loop too}\;
+                  \Break
+              }
+          }
+          $i \gets i + 1$\;
+      }
+  }
+  \Return $\delta_v$\;
+  \caption{\textsf{lookAhead} (Phase $3$ of CFLA)\label{algo:la}}
+\end{algorithm}
+
+Given a task $v$, Algorithm \ref{algo:la} performs a brute-force search to define its
+degree $\delta_v$ (Section \ref{sec:cfla_gen}). At line $8$, with a procedure similar to
+line $5$ in Algorithm \ref{algo:ecf}, it checks how many tasks can be completed after the
+completion of $v$.
+Hence, Algorithm \ref{algo:la} assigns a score to each coalition allocation selected by
+Phase $2$ (Section \ref{sec:cfla2}) for each currently uncompleted task. These scores are
+then used by Phase $4$ (Section \ref{sec:cfla4}) to choose the next task to execute.
+
+\subsection{Phase 4: Overall Procedure of CFLA}\label{sec:cfla4}
+
+Algorithm \ref{algo:cfla} shows the overall procedure. The \textsf{repeat-until} loop runs
+until all tasks are completed, or until the maximum problem time is expired (line $22$). At
+each time $t$, the set of legal agent allocations is updated (line $8$), and a task
+allocation is defined (Lines $9 - 18$). If it is not possible to allocate other tasks,
+the algorithm stops early (line $19$).
+
+\begin{algorithm}[t]
+  \DontPrintSemicolon
+  \KwIn{tasks $V$, task demands $(\gamma_v, w_v)_{v \in V}$, agents $A$, locations $L$,
+  travel function $\rho$, coalition value function $u$}
+  $t \gets 0$\;
+  $\Gamma' \gets \varnothing$
+  \Comment*[h]{\small a solution}\;
+  $V_{unc} \gets V$ \Comment*[h]{\small uncompleted tasks}\;
+  \Repeat{$V_{unc} = \emptyset$ or $t > \tmax$}{
+      $\delta_{max} \gets 0$ \Comment*[h]{\small maximum task degree}\;
+      $v^* \gets$ \textsc{nil} \Comment*[h]{\small next task to allocate}\;
+      $C^* \gets \emptyset$ \Comment*[h]{\small coalition to which $v^*$
+      is allocated}\;
+      $\text{Leg}_t \gets$ \textsf{getLegalAgentAllocations}$(t)$ \Comment*[h]{\small
+      Algorithm \ref{algo:alloc}}\;
+      \For{$v \in V_{unc}$}{
+          $C^*_v \gets$ \textsf{ECF}$(v, \text{Leg}_t)$ \Comment*[h]{\small
+          Algorithm \ref{algo:ecf}}\;
+          $\delta_v \gets$ \textsf{lookAhead}$(v, C^*_v, \Gamma')$ \Comment*[h]{\small
+          Algorithm \ref{algo:la}}\;
+          \If{$\delta_v > \delta_{max}$}{
+              $\delta_{max} \gets \delta_v$\;
+              $v^* \gets v$\;
+              $C^* \gets C^*_v$\;
+          }
+      }
+      \If{$v^* \neq$ \textnormal{\textsc{nil} and} $C^* \neq \emptyset$}{
+          Add to $\Gamma'$ the allocation of $C^*$ to $v^*$\;
+          $V_{unc} \gets V_{unc} \setminus \{ v^* \}$\;
+      }
+      \If(\Comment*[h]{\small all agents are free}){$A^t_{free} = A$}{
+          \Break\;
+      }
+      $t \gets t + 1$\;
+  }
+  \Return $\Gamma'$\;
+  \caption{Overall procedure (Phase $4$ of CFLA)\label{algo:cfla}}
+\end{algorithm}
+
+\section{The Original Mixed Integer Program of the CFSTP}\label{sec:mip}
+
+As opposed to \cite[Section $5$]{ramchurn2010cfstp}, for readability purposes, we begin by
+introducing the decision variables, then we formulate and explain the constraints,
+%using typo-free equations and a more concise explanation style,
+and finally give the objective function.
+To be consistent with the notation introduced so far, we rename some variables and
+constraints.
+
+\subsection{Decision Variables}\label{sec:original-dv}
+Let $L_V \subseteq L$ denote the set of all task locations.
+There are $4$ sets of binary variables and $1$ set of integer variables:
+\begin{gather}
+    \forall v \in V,\, \forall t \leq \tmax,\, \forall a \in A,\;
+    \mxa \in \left\{ 0, 1 \right\}\\
+    \forall v \in V,\, \forall t \leq \tmax,\, \forall C \subseteq A,\;
+    \mxc \in \left\{ 0, 1 \right\}\label{eq:dvc}\\
+    \forall v \in V,\, y_v \in \left\{ 0, 1 \right\}\\
+    \forall a \in A,\, \forall l_1 \in L,\, \forall l_2 \in L_V,\; r^a_{l_1, l_2} \in \left\{ 0, 1 \right\}\\
+    \forall v \in V,\, \forall a \in A,\;
+    \lambda^v_a \in \left\{ 0, \dots, \tmax \right\}
+\end{gather}
+where: $\mxa = 1$ (resp. $\mxc = 1$) if agent $a$ (resp. coalition $C$) works on task $v$
+at time $t$, and $0$ otherwise; $y_v = 1$ if task $v$ is completed, and $0$ otherwise;
+$r^a_{l_1, l_2} = 1$ if agent $a$ travels from location $l_1 \in L$ to location $l_2 \in
+L_V$, and $0$ otherwise, and $\lambda^v_a$ is the time at which agent $a$ starts working
+on task $v$.
+It is assumed that the allocation process starts at $t = 1$. Hence, $\lambda^v_a = 0$
+indicates that agent $a$ does not work on task $v$.
+In the original formulation, $y_v$ is
+$\delta_v$, $\mxc$ is $\alloc{C}{t}$, and $\lambda^v_a$ is $s^v_a$.
+
+\subsection{Constraints}
+
+There are $4$ types of constraints: \emph{completion}, \emph{temporal}, \emph{spatial},
+and \emph{linking}. In the original formulation, the temporal constraints are called
+\emph{deadline} constraints, while the spatial constraints are called \emph{starting time,
+routing and service consistency} constraints.
+
+The following equations use the Big-M method \cite{griva2009}: \ref{eq:mip1},
+\ref{eq:mip4}, \ref{eq:mip5}, \ref{eq:mip9}, \ref{eq:mip13}, \ref{eq:mip14},
+\ref{eq:mip17}, \ref{eq:mip18}, and \ref{eq:mip20}.
+This method introduces an arbitrarily large positive constant $M$ to artificially penalise
+the violation of the constraints involved.
+
+\paragraph{Completion Constraints}
+The work done for each task $v$ is at least equal to its workload $w_v$ if the task is
+completed, and $0$ otherwise:
+\begin{gather}
+    \forall v \in V,\; \sum_{t \leq \tmax} \sum_{C \subseteq A} \mxc \cdot u(C, v) \geq
+    y_v \cdot w_v\label{eq:mip0}\\
+    \forall v \in V,\; \sum_{t \leq \tmax} \sum_{C \subseteq A} \mxc \leq M \cdot y_v\label{eq:mip1}
+\end{gather}
+Moreover, at each time, at most one coalition can work on each task:
+\begin{equation}\label{eq:mip2}
+    \forall v \in V,\, \forall t \leq \tmax,\; \sum_{C \in A} \mxc \leq y_v
+\end{equation}
+
+\paragraph{Temporal Constraints}
+Each task can only be completed by its deadline:
+\begin{equation}\label{eq:mip3}
+    \forall v \in V,\, \forall a \in A,\; \lambda^v_a + \sum_{t \leq \tmax} \mxa \leq \gamma_v
+\end{equation}
+Since it is assumed that there are no allocations at time $t = 0$, it follows from
+Equations \ref{eq:mip0} and \ref{eq:mip1} that if a task is not completed, the left-hand
+side of Equation \ref{eq:mip3} is $0$.
+
+\paragraph{Spatial Constraints}
+For each agent $a$ and task $v$, $a$ can start to work on $v$ after finishing work on a
+previous task, or after reaching the task location $l_v$ from its initial location
+$l^a_0$:
+\begin{gather}
+    \forall a \in A,\, \forall l \in L_V \cup \left\{ l_0^a \right\},\, \forall v \in V,\;
+    \rho \left(a, l, l_v \right) \leq \lambda^v_a + M \cdot \left( 1 - r^a_{l_a, l_v}
+    \right)\label{eq:mip4}\\
+    \forall a \in A,\, \forall v_1, v_2 \in V,\;
+    \lambda^{v_1}_a + \sum_{t \leq \tmax} x_{v_1,\, t,\, a} + \rho\left(a, l_{v_1},
+    l_{v_2}\right) \leq \lambda^{v_2}_a + M \cdot \left( 1 - r^a_{l_{v_1}, l_{v_2}}
+    \right)\label{eq:mip5}
+\end{gather}
+For each agent $a$ and time $t$, $a$ can work on at most one task during $t$:
+\begin{equation}\label{eq:mip6}
+    \forall a \in A,\, \forall t \leq \tmax,\; \sum_{v \in V} \mxa \leq 1
+\end{equation}
+If an agent starts working on a task at time $t$, then variables $\mxa$ and $x_{v,\, t -
+1,\, a}$ must have different values:
+\begin{equation}\label{eq:mip7}
+    \forall a \in A,\, \forall v \in V,\, \forall t \in [1, \tmax],\;
+    1 - 2 \cdot \left| t - \lambda^v_a \right| \leq \mxa - x_{v,\, t - 1,\, a}
+\end{equation}
+For each agent $a$ and task $v$, $a$ changes the status of its service on $v$ (e.g.,
+\emph{not working} to \emph{working} or vice versa) at most twice:
+\begin{gather}
+    \forall a \in A,\, \forall v \in V,\;
+    \sum_{t \in [1, \tmax]} \left| \mxa - x_{v,\, t - 1,\, a} \right| \leq
+    2\label{eq:mip8}\\
+    \begin{gathered}
+    \forall a \in A,\, \forall v_1, v_2 \in V,\, \forall t \in [1, \tmax],\\ 1 - \left| t
+    - \lambda^{v_2}_a - \rho \left( a, l_{v_1}, l_{v_2} \right) \right| - M \cdot \left( 1
+    - r^a_{l_{v_1}, l_{v_2}} \right) \leq \left| x_{v_1,\, t,\, a} - x_{v_1,\, t - 1,\, a}
+    \right|
+    \end{gathered}\label{eq:mip9}
+\end{gather}
+An agent cannot leave and reach the same task location, it can only reach a new task
+location from exactly one previous location, and it can only leave a location to
+reach exactly one task location:
+\begin{gather}
+    \forall a \in A,\, l \in L_V,\; r^a_{l, l} = 0\label{eq:mip10}\\
+    \forall a \in A,\, \forall l \in L_V \cup \left\{ l^a_0 \right\},\, \forall v_1 \in
+    V,\; r^a_{l, l_{v_1}} + \sum_{v_2 \in V \setminus \{ v_1 \}} r^a_{l_{v_1}, l_{v_2}}
+    \leq 1\label{eq:mip11}
+\end{gather}
+
+\begin{gather}
+    \forall a \in A,\, \forall l \in L_V \cup \left\{ l^a_0 \right\},\;
+    \sum_{v \in V} r^a_{l, l_v} \leq 1\label{eq:mip12}\\
+    \forall v_2 \in V,\, \forall a \in A,\;
+    \sum_{v_1 \in V \setminus \{ v_2 \}} r^a_{l_{v_1}, l_{v_2}} \leq M \cdot \sum_{t \leq
+    \tmax} x_{v_2,\, t,\, a}\label{eq:mip13}\\
+    \forall v_1 \in V,\, \forall a \in A,\;
+    \sum_{v_2 \in V \setminus \{ v_1 \}} r^a_{l_{v_1}, l_{v_2}} \leq M \cdot \sum_{t \leq
+    \tmax} x_{v_1,\, t,\, a}\label{eq:mip14}
+\end{gather}
+
+\paragraph{Linking Constraints}
+An agent reaches a task only to complete it:
+\begin{equation}\label{eq:mip15}
+    \forall v \in V,\;
+    \sum_{a \in A, l \in L_V \cup \left\{ l^a_0 \right\}} r^a_{l, l_v} \geq y_v
+\end{equation}
+A coalition $C$ works on task $v$ and at time $t$ only if every agent $a \in C$ works on
+$v$ at $t$:
+\begin{equation}\label{eq:mip16}
+    \forall C \subseteq A,\, \forall v \in V,\, \forall t \leq \tmax,\;
+    \sum_{a \in C} \mxa \geq |C| \cdot \mxc
+\end{equation}
+If task $v$ is allocated to agent $a$, then $a$ works on $v$ for at least $1$ unit of
+time:
+\begin{gather}
+    \forall a \in A,\, \forall v \in V,\;
+    \lambda^v_a \leq M \cdot \sum_{t \leq \tmax} \mxa\label{eq:mip17}\\
+    \forall a \in A,\, \forall v \in V,\;
+    \sum_{t \leq \tmax} \mxa \leq M \cdot \lambda^v_a\label{eq:mip18}
+\end{gather}
+If task $v$ is allocated to agent $a$, then $a$ works on $v$ after reaching $l_v$ from
+another task location or from its initial location $l^a_0$:
+\begin{gather}
+    \forall a \in A,\, \forall v \in V,\;
+    \lambda^v_a \geq \sum_{l \in L_V \cup \left\{ l^a_0 \right\}} r^a_{l,
+    l_v}\label{eq:mip19}\\
+    \forall a \in A,\, \forall v \in V,\;
+    \lambda^v_a \leq M \cdot \sum_{l \in L_V \cup \left\{ l^a_0 \right\}} r^a_{l,
+    l_v}\label{eq:mip20}
+\end{gather}
+Each agent can work on at most one task at a time, and cannot work at time $t = 0$:
+\begin{gather}
+    \forall a \in A,\, \forall t \leq \tmax,\; \sum_{v \in V} \mxa \leq 1\label{eq:mip21}\\
+    \forall a \in A,\, \forall v \in V,\; x_{v,\, 0,\, a} = 0\label{eq:mip22}
+\end{gather}
+Equations \ref{eq:mip8}, \ref{eq:mip16} and \ref{eq:mip22} also imply that if a coalition
+$C$ works on a task, the service status of each $a \in C$ switches from $0$ to $1$ at the
+beginning of the work, and from $1$ to $0$ at the end of it.
+
+\subsection{Objective Function}\label{sec:of0}
+
+The objective of the CFSTP is to maximise the number of tasks completed:
+
+\begin{equation}\label{eq:cfstpof}
+    \max \sum_{v \in V} y_v \text{ subject to Equations } \ref{eq:mip0} - \ref{eq:mip22}
+\end{equation}
+
+To solve the MIP defined by Equation \ref{eq:cfstpof}, we first need to create all
+decision variables and constraints. Creating the decision variables of Equation
+\ref{eq:dvc} requires to list all $\mathcal{L}$-tuples over $P(A)$, where $\mathcal{L} =
+|V| \cdot \tmax$, with a worst-case time and space complexity of:
+\begin{equation}\label{eq:ccc}
+    O\left( {\left(2^{|A|}\right)}^{\mathcal{L}} \right) =
+    O\left( 2^{|A| \cdot |V| \cdot \tmax} \right)
+\end{equation}
+Creating the remaining decision variables and constraints does not take more time and
+space than Equation \ref{eq:ccc}.
+Hence, implementing and solving the above MIP with optimisation software packages such as
+CPLEX or GLPK may require an exponential amount of time and space, followed in the worst
+case by a factorial amount of time (Equation \ref{eq:cfstpcomp}).

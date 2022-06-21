@@ -1,0 +1,8 @@
+#!/bin/sh
+
+doas tlmgr install libertinus libertinus-type1 libertinust1math mathalpha boondox \
+     biblatex biblatex-ext subfigure titlesec nowidow glossaries glossaries-extra \
+     glossaries-english mfirstuc xfor emptypage datatool vmargin titling tocbibind \
+     xifthen ifmtarg adjustbox lastpage inconsolata csquotes enumitem collectbox \
+     fontaxes ifoddpage relsize pgfplots addlines environ tocloft silence changepage \
+     upquote

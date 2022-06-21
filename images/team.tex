@@ -1,0 +1,30 @@
+\begin{tikzpicture}
+    \node (n1) at (0   , 0    ) {\pgfuseplotmark{*}};
+    \node (n2) at (0.25, -1   ) {\pgfuseplotmark{*}};
+    \node (n3) at (0.5 , -0.5 ) {\pgfuseplotmark{*}};
+    \node (n4) at (-0.5, -0.75) {\pgfuseplotmark{*}};
+    \node (n5) at (1   , -0.25) {\pgfuseplotmark{*}};
+    \node (n6) at (1   , -1.25) {\pgfuseplotmark{*}};
+    \node (n7) at (1.75, 0.25 ) {\pgfuseplotmark{*}};
+    \node (n8) at (2.5 , 0    ) {\pgfuseplotmark{*}};
+    \node (n9) at (2   , -0.75) {\pgfuseplotmark{*}};
+
+    %\begin{scope}[-Straight Barb]
+    \begin{scope}[-stealth]
+    \draw (n1) -- (n2);
+    \draw (n1) -- (n3);
+    \draw (n1) -- (n4);
+    \draw (n3) -- (n5);
+    \draw (n5) -- (n7);
+    \draw (n8) -- (n9);
+    \end{scope}
+
+    %\begin{scope}[Straight Barb-Straight Barb]
+    \begin{scope}[stealth-stealth]
+    \draw (n3) -- (n6);
+    \draw (n7) -- (n8);
+    \draw (n7) -- (n9);
+    \end{scope}
+
+    \draw (1, -0.45) ellipse (55pt and 1cm);
+\end{tikzpicture}

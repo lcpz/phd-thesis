@@ -1,0 +1,982 @@
+\chapter{Literature Review}\label{chap:lit}
+
+This chapter reviews the areas identified in Section \ref{sec:objectives}, namely, game
+theory, decision theory and constraint programming. Based on the classifications of
+\cite{ye2016,cerquides2013,cao2013,farinelli2004,ponda2015,
+korsah2013taxonomy,gini2017,nunes2017taxonomy,khamis2015,parker2016,jahn2020,miloradovic2019tamer,skaltsis2021survey,verma2021,aziz2021},
+we identify $3$ fundamental approaches to cooperative coordination: coalition formation in
+game theory (Section \ref{sec:cf}); Markov decision processes in decision
+theory\footnote{More precisely, in the subfield of multi-agent planning
+\cite{torreno2017}.} (Section \ref{sec:mdp}), and distributed constraint optimisation
+problems in constraint programming (Section \ref{sec:dcop0}).
+
+For each approach, we highlight the main results that are relevant to our
+objectives (Section \ref{sec:objectives}). Then, in Section \ref{chap2:choice}, we explain
+which approach we choose to work with in the following chapters.
+Finally, in Section \ref{chap2:limitations}, we list the limitations of our starting model
+(Section \ref{sec:pstat}) in relation to our objectives, and show that no work proposed so
+far is able to address all of them. This motivates the introduction of the novel model in
+Chapter \ref{chap:contrib3}.
+
+\section{Coalition Formation}\label{sec:cf}
+
+Task allocation through \emph{Coalition Formation} (CF) models scenarios where tasks
+cannot be performed by a single agent \cite{shehory1998}. It consists of $3$
+phases \cite{sandholm1999}:
+\begin{enumerate}
+    \item \gls{csg}: partitioning of agents into exhaustive and disjoint sets such that
+        only agents within the same set cooperate. Such sets are called \emph{coalitions},
+        while the partition is called \emph{coalition structure};
+    \item \emph{Coalition value calculation}: for each coalition $C$, definition of a
+        measure of the expected outcome that could be derived if $C$ was formed. Once the
+        calculation is done, the decision about how to optimally form coalitions can be
+        taken, which depends on the given problem;
+    \item \emph{Revenue distribution}: determination of the rewards for each agent in
+        order to get \emph{stable} coalitions \cite{rahwan2009}. A coalition is stable if
+        its agents have no incentive to deviate from it. This property is also known as
+        \emph{incentive compatibility} \cite[Section $9.3.2$]{nisan2007}.
+\end{enumerate}
+The most important phase is that of CSG, since the number of possible coalition structures
+is exponential in the number of agents. Specifically, the time complexity required
+to find an optimal coalition structure is $O(a^a)$ and $\omega(a^{a/2})$, where
+$a$ is the number of agents. Furthermore, the problem is NP-complete \cite{sandholm1999}.
+For this reason, a wide range of approximate algorithms has been developed so far, using
+approaches from mathematical programming, stochastic search and machine learning. In the
+remainder of this section, we will review some important works that are of interest to our
+context. We refer to \cite{rahwan2015survey} for a thorough survey on CSG.
+
+Among the first and best-known attempts to study algorithmic aspects of CSG, we find
+\cite{shehory1998}. They developed decentralised, anytime and dynamic algorithms with low
+ratio bounds and low computational complexity, where coalitions may have a precedence
+order. Their limitation is the assumption that coalition resources can be transferred
+between agents, which reduces the solution space.
+
+An optimal solution to the CSG problem has been given by \cite{rahwan2009}. They represent
+the solution space through integer partition \cite{andrews2004} and solve the problem
+using a branch-and-bound technique. The limitation of this approach is that, in the worst
+case, the number of coalition structures to be searched is intractable. As a result, the
+algorithm is not scalable (Requirement R3).
+
+A CF model with incomplete information, limited computational resources, and time
+constraints was proposed by \cite{kraus2003,kraus2004}. Their mechanism consists of an
+auction protocol and $2$ heuristic algorithms. Experimental results show that their
+algorithms are stable and increase social welfare, compared to previous strategies. There
+are $2$ limitations in the work. First, it focuses specifically on the Request For
+Proposal domain, where the tasks are independent. Therefore, it cannot be
+used in settings where there may be task precedences (Assumption A2). Second, the
+algorithms have no theoretical guarantees, while we aim at approximate algorithms (Section
+\ref{sec:objectives}).
+
+A variant of CSG is the \emph{Graph-Constrained Coalition Formation} (GCCF)
+\cite{myerson1977}, where agents have a graph of relationships $G$ and a coalition $C$ is
+considered feasible if all agents in $C$ are connected by a subgraph of $G$ induced by
+$C$. This formulation allows solving a wide range of real-world problems. An interesting
+one is the Social Ridesharing problem \cite{bistaffa2015}, in which a community of
+commuters (e.g., riders and drivers) need to form coalitions (e.g., joining in cars) while
+meeting the constraints imposed by the social network (e.g., users prefer to ride with
+friends). The objective is to minimise associated transportation costs, like travel time
+and fuel. The model has been extended to also allow temporal constraints, such as desired
+pick-up and arriving times \cite{bistaffa2017a}. For a survey on real-world GCCF
+applications, we refer to \cite{bistaffa2017b}. Such approaches can cope with
+spatio-temporal and resource constraints (Assumptions A1 and A4). Nonetheless, they are
+offline, which implies that situations where agents can join in or leave cannot be
+considered (Requirement R4 and Assumption A5). \cite{flammini2018} have proposed an online
+GCCF model in which the graph is weighted and agents are assigned to coalitions
+irrevocably. However, their model cannot solve problems where the graph is unweighted or
+coalitions can be modified (Requirement R4).
+
+Another variant of CSG is the \emph{Overlapping Coalition Formation} (OCF) model
+\cite{chalkiadakis2010}, where agents may be involved in more than one task and thus may
+distribute their resources among multiple coalitions. There is no inherent superadditivity
+assumption, therefore it is possible to capture scenarios in which not always any pair of
+coalitions is best off by merging into one\footnote{That is, scenarios in which the
+emergence of the \emph{grand coalition}, or the coalition of all agents, is either not
+guaranteed or impossible \cite{sandholm1997,sandholm1999}.}. To date, however, there
+is still no characterisation of scenarios where overlapping coalitions can naturally
+arise (Assumption A5). \cite{zick2012} showed that the OCF can be reduced to the
+Unbounded Knapsack Problem \cite{martello1990}, thus proving that it is NP-complete.
+They also identified that the computational complexity depends on the amount of
+resources possessed by each agent, the maximum coalition size, and the pattern of
+interaction among agents. Furthermore, they proposed tractable subproblems with
+discrete resources and limited interactions.
+
+\cite{rahwan2013coalitional} proposed the \emph{Coalition-Flow Network} (CF-NET) model,
+where a characteristic function game can be represented as a network flow problem. In the
+CF-NET model, the value of a coalition is associated with both the execution of a given
+task and the types of the agents involved. Agents can participate in multiple coalitions
+simultaneously, which allows to consider both CSG and OCF problems. In addition, each agent
+has a limit on the resources that can use to execute tasks, thus there is an upper bound
+on the number of coalitions it can join. An anytime approximate algorithm is proposed,
+which provides worst-case guarantees on the solution quality. Although it permits to
+switch between cases with non-overlapping and overlapping coalitions efficiently, with and
+without agent types, the work does not consider scenarios where the order in
+which agents join a coalition can affect the value of the coalition \cite{michalak2014}.
+Hence, it is not suitable for real-time domains such as disaster response.
+
+A typical assumption in CF is that the values of potential coalitions are known with
+certainty, and agents have complete information on the capabilities of potential partners.
+\cite{chalkiadakis2004,chalkiadakis2012} have proposed a model in which both coalition
+values and agent capabilities are uncertain, and Bayesian \emph{Reinforcement Learning}
+(RL) \cite{brl2015survey} is used to reduce such uncertainties. The rationale for using RL
+is that agents are supposed to interact between each other by repeatedly exchanging
+messages, therefore the more they interact, the more accurate their beliefs about each
+other's capabilities.
+Their stability criterion, called \emph{Bayesian core}, makes agent $a$ choose coalition
+$C$ based not only on the value of $C$, but also on its \emph{value of information},
+defined as the quantity of information that $a$ can learn about other agents if $C$ was
+formed. Since the proposed inferential process does not consider the cost of computation,
+it is not clear how the model can handle large-scale problems (Requirement R3). Another
+limitation is that RL approaches, and machine learning in general\footnote{Not considering
+open problems such as brittleness, embedded bias, catastrophic forgetting, and
+explainability \cite{ml-failures,dehghani2021,roy2021}, as well as the non-trivial
+requirement to adjust parameters according to available data and target application
+\cite{vasudevan2021}. In fact, in industry it is good practice to start without machine
+learning \cite{yan2021}.}, are inapplicable to our domains of interest due to their
+initial training phase: before they can generate feasible solutions, the problem
+formulation may change, thus new training may become necessary \cite{tsimenidis2020}.
+Moreover, such approaches are notoriously sample-inefficient, that is, they usually need
+millions of interactions even for the simplest problems \cite{yang2021survey}. This
+latency is particularly undesirable in real-time scenarios, where the situation can evolve
+quickly (Assumption A3).
+
+\cite{krausburg2021} introduced the \emph{Sequential Characteristic Function Game} (SCFG),
+which extends the CSG problem to a total order of structures defined by binary relations.
+A variant of the clustering heuristic by \cite{farinelli2017} is proposed to solve the
+problem, and $2$ examples show that the model is able to characterise disaster response
+scenarios where agents can be organised in dynamic hierarchies of coalitions to respond to
+various events. Although it opens up new research directions in game theoretic CF, the
+SCFG is only able to meet our Assumptions A2 and A5.
+
+\cite{czarnecki2021} use a maximum bipartite graph matching and a hedonic CSG
+\cite{bogomolnaia2002} to address MRTA domains that require to minimise formation costs
+and to maximise coalition values. Their approach is guaranteed to reach a Nash
+equilibrium, and capable to solve problems with thousands of robots and hundreds of tasks
+in seconds, which satisfies Requirement R3. However, it does not take any of our remaining
+objectives into account.
+
+\section{Markov Decision Processes}\label{sec:mdp}
+
+\emph{Markov Decision Processes} (MDPs) \cite{seuken2008} are widely used in cooperative
+coordination \cite{torreno2017}, given their capability to model stochastic and sequential
+decision making \cite{sutton1998,diederich2001,kolobov2012}, and have been successfully
+applied to many agent-based models, multi-agent systems and multi-robot systems.
+\cite{smith1981,stone2005,guestrin2002,denijs2021,kurniawati2021survey}.
+Since their computational complexity is super-polynomial in the number of agents
+\cite{bellman2003}, MDP algorithms are typically approximate
+\cite{sutton1996,bertsekas2012,mahadevan2007,busoniu2017,geramifard2011}.
+
+In the standard MDP model, agents are able at every time step to observe the whole global
+state. This is not possible in presence of uncertainty, where agents can only infer
+information on the global state by observing the environment. The \gls{pomdp} model
+extends the MDP model to such domains \cite{seuken2008}. Solving POMDPs is much more
+computationally expensive than solving MDPs, because the optimal policy is a mapping from
+a belief space (over the state space) to the action space, rather than from the state
+space to the action space. Thus, the problem dimension is exponentially increased.
+
+When the MDP and POMDP models are applied to multi-agent scenarios, the resulting models
+are called \emph{Multi-agent (Partially Observable) Markov Decision Processes} (MMDP and
+MPOMDP, respectively). The main difference is that decisions are collective, therefore
+there are: a \emph{joint} agent state space; a \emph{joint} action space, and a
+\emph{joint} observation space. It is demonstrated that the computational complexity of
+M(PO)MDPs is exponential in the number of agents \cite{redding2012}. Furthermore,
+a limiting assumption of these models is that each agent is required to have a \emph{full}
+(MMDPs) or \emph{partial} (MPOMDPs) \emph{individual observability} of the global state.
+That is, each agent must have the same full or partial knowledge of the joint state.
+
+When agents decide and observe locally, the assumption of individual observability is in
+general impractical, as it requires that every agent communicate its observations to
+every other agent at every time step, with no communication costs. This is typically
+referred to as a \emph{free-comm} environment \cite{ponda2015}. However, in real-world
+situations like disaster response, communication might have operational constraints, such
+as limited bandwidth or network topology. To address this issue, various decentralised
+(PO)MDP variants have been proposed, but they further increase the problem dimension
+and thus worsen the computational complexity. The \emph{Decentralised MDP} (Dec-MDP)
+model, first proposed by \cite{bernstein2002}, replaces the assumption of full
+individual observability with a full joint observability requirement: the sum of all agent
+observations must be equal to the full observability of the global state. To do so, agents
+share their observations through communication. However, this overhead has NEXPTIME
+complexity. If the global state cannot be uniquely determined by a joint observation, the
+Dec-MDP becomes a Dec-POMDP \cite{bernstein2002}. The Dec-POMDP has been proven to be
+equivalent to the \emph{Multi-agent Team Decision Problem} (MTDP) \cite{pynadath2002} in
+terms of computational complexity and expressiveness of representation \cite{seuken2008}.
+If a free-comm environment is assumed, then Dec-MDP and Dec-POMDP reduce to MMDP and
+MPOMDP, respectively \cite{goldman2004}.
+
+Since the communication infrastructure plays a key role in decentralised architectures,
+the above models have also been extended to capture agent communication protocols. The
+resulting variants, namely the Dec-POMDP-COM \cite{goldman2003} and the COM-MTDP
+\cite{pynadath2002}, define communications as actions on which agents must make explicit
+decisions. In other words, sending a message is also an action with an associated cost,
+and every agent has to decide which messages to send at each time step, where the decision
+not to send a message is modelled as a null message with zero cost. It is shown that
+Dec-POMDP, MTDP, Dec-POMDP-COM and COM-MTDP are all NEXPTIME-complete in the number of
+agents \cite{seuken2008}.
+
+In MDP models, the complexity of a problem is directly linked to the assumptions on
+observability and communication \cite{seuken2008}. To keep the computational complexity
+tractable, the problem is typically relaxed. Among the most interesting approximate
+MDP model, we find the \emph{Transition Independent Dec-MDP} (TI-Dec-MDP)
+\cite{becker2004}, where agents are independent and collaborate with each other through a
+global reward function of all agent states and actions. The TI-Dec-MDP extends
+a factored version of Dec-MDP, in which the global state is divided into
+$2$ parts: information about local agent states, and information about the environmental
+variables of interest. In this model, the dynamics that rule the state transitions and
+observations of each agent are independent (i.e., they are functions only of the local
+agent and the world state), and agents are only coupled through the global reward
+function. Being based on independent agents, the TI-Dec-MDP scales in time better than
+other models, but it is also more space demanding, because it requires that each agent
+stores its complete state transition history \cite{becker2004,redding2012}. Moreover, the
+independence assumption does not allow to explicitly model situations due to combinations
+of agent states (e.g., UAV collisions), even though these can be defined by assigning very
+large negative rewards (e.g., instead of being defined as a set of constraints, collision
+avoidance could be integrated into the global reward function). Other notable approximate
+models include:
+\begin{itemize}
+    \item The decentralised sparse-interaction MDP \cite{melo2011}, in which the agent
+        state space is subdivided into $2$ subsets: states where agents need to cooperate,
+        and states where they can act independently;
+    \item The group-aggregate Dec-MMDP \cite{redding2012}, where each agent stores only
+        some properties of interest regarding other agent state-action spaces (e.g., the
+        number of agents in a particular area, or the location of a particular subset of
+        agents);
+    \item The auctioned POMDP \cite{capitan2013}, in which agents solve their local
+        version of the global problem (optimised to their preferences), then negotiate a
+        global solution through an auction protocol;
+    \item The POMDP with information rewards \cite{spaan2015}, where agents are
+        rewarded for reaching certain levels of belief on target state features. This
+        model is designed for robot-assisted surveillance, where robots have to take into
+        account the influence of actions on the environment, as well as the potential
+        information gain;
+    \item The POMDP with macro-actions \cite{amato2016}, aimed at solving MRTA
+        allocation problems. A \emph{macro-action} is a set of actions necessary to
+        complete a high-level goal, and includes low-level actions such as moving,
+        manipulating, and perception. \cite{smith2019} extended the framework using
+        \emph{Monte Carlo Tree Search} (MCTS) to search the action spaces and allow
+        real-time planning;
+    \item The mixed observed MDP \cite{chen2021}, combined with a factor graph formulation
+        and solved with the decentralised Max-Sum algorithm (Section \ref{sec:dcop}).
+\end{itemize}
+Summing up, computational complexity in MDPs can be reduced through approximate
+techniques, but this yields to problem-dependent solutions. Concerning disaster response
+problems, important models and solution techniques are listed below:
+\begin{itemize}
+    \item Multi-agent POMDP with online Bayesian learning \cite{allen2010}, in which agent
+        policies are defined through deterministic finite state machines built with
+        Bayesian learning. Heuristics specific to search and rescue problems are used to
+        estimate the values of future states to add;
+    \item Multi-agent POMDP with MCTS \cite{amato2015}, which extends the seminal online
+        planning method by \cite{silver2010} to multi-agent planning and learning
+        domains, with particular interest in fire-fighting and sensor network problems
+        with up to $10$ agents.
+    \item Multi-agent MDP with MCTS \cite{ramchurn2015a}. The considered problem is the
+        CFSTP \cite{ramchurn2010cfstp}, extended to capture the uncertainties of a threat
+        diffusing in an aftermath area (e.g., a radioactive cloud), and the activity of
+        first responders. To cope with dimensionality issues, an approximate algorithm is
+        developed using MCTS to estimate the expected value of teams. Under the same
+        settings, \cite{baker2016} proposed a decentralised variant of MCTS that allows
+        coordinating multiple UAVs in the exploration of continuous disaster spaces, with
+        the aim of maximising the probability of discovering survivors;
+    \item Multi-agent MDP with rejections, called $k$-RMMDP \cite{ramchurn2016}, which
+        is based on the probability that a set of agents $T_H$ rejects a joint action in a
+        given state, while each other agent $\notin T_H$ accepts it. A novel approach,
+        called \emph{Two-Pass Planning} (TPP), is proposed to solve $k$-RMMDPs ad hoc.
+        Empirical evaluation shows that, in human-\emph{in}-the-loop settings, TTP task
+        allocations are more likely to be accepted by first responders, and also have a
+        better completion rate with respect to human-\emph{on}-the-loop settings;
+    \item POMDP with online planning and active sensing \cite{wu2016}, where Monte Carlo
+        simulation (for one human) is combined with information-based active sensing (for
+        multiple UAVs) using an anytime heuristic;
+    \item Qualitative Dec-POMDP (QDec-POMDP) with iterative planning \cite{bazinin2018}.
+        A QDec-POMDP is a Dec-POMDP in which the quantitative probability distributions
+        over state spaces are replaced with qualitative sets of states. Although this
+        change improves the scalability, it does not alter the computational complexity;
+    \item Dec-POMDP with multi-agent reinforcement learning \cite{lee2021} pre-trained by
+        behavioural cloning \cite{lee2021} to solve selective patient admission
+        problems, in which an emergency department strategically reassigns some of the
+        incoming patients to other emergency departments to preserve its medical resources
+        for future severe patients.
+\end{itemize}
+None of the solutions presented above meets all of our requirements (Section
+\ref{sec:objectives}), because they are either based on heuristics
+\cite{allen2010,baker2016,wu2016,bazinin2018} (we aim at solutions with provable
+guarantees), or rely on a centralised solver \cite{amato2015,ramchurn2015a,ramchurn2016}
+(Requirement R1 impose decentralised solutions), or are not usable in dynamic environments
+\cite{lee2021} (Assumption A5).
+
+\section{Distributed Constraint Optimisation Problems}\label{sec:dcop0}
+
+A generalisation of the Distributed Constraint Satisfaction Problem
+\cite{yokoo1998}, the \emph{Distributed Constraint Optimisation Problem}
+(DCOP)\footnote{Originally abbreviated to \emph{DisCOP} \cite{meisels2007}.}
+\cite{farinelli2013dcop} can be classified according to the following parameters
+\cite{fioretto2018survey}:
+\begin{itemize}
+    \item \emph{Agent behaviour}: how agents act. It can be deterministic or stochastic;
+    \item \emph{Agent knowledge}: how much agents know about their state and the state of
+        the environment. It can be total or partial;
+    \item \emph{Agent coordination}: how agents interact. It can be cooperative (common
+        goals) or competitive (individual goals);
+    \item \emph{Environment behaviour}: how the environment reacts to the execution of an
+        action. It can be deterministic or stochastic;
+    \item \emph{Environment evolution}: this parameter defines whether the problem changes
+        over time (dynamic) or not (static).
+\end{itemize}
+
+\begin{table}[t]
+    \centering
+    \begin{tabular}{lcc}
+        \toprule
+        EE / EB &
+        \textsc{Deterministic} & \textsc{Stochastic}\\
+        \midrule
+        \textsc{Static} & DCOP & Probabilistic DCOP\\
+        \midrule
+        \textsc{Dynamic} & Dynamic DCOP & --\\
+        \bottomrule
+    \end{tabular}
+    \caption[DCOP model taxonomy]{DCOP models \cite{fioretto2018survey}. The columns refer
+    to the environment evolution (EE), while the rows refer to the environment behaviour
+    (EB). In this thesis, we focus on the first column.}
+    \label{t:dcop}
+\end{table}
+
+Table \ref{t:dcop} lists the models associated with this classification. The DCOP is a
+direct extension to distributed environments of the \gls{cop}. It is characterised by
+static and deterministic environment, deterministic agent behaviour, total agent
+knowledge, and cooperative agent coordination. \emph{Dynamic DCOPs} (DynDCOPs) are based on
+decision theory concepts to model dynamic environments.
+Given our objectives (Section \ref{sec:objectives}), in the next sections we give a formal
+definition of DCOPs and DynDCOPs, along with a summary of state-of-the-art algorithms.
+Following \cite[Section $4.3$]{fioretto2018survey}, we will use the term \emph{incomplete}
+to denote an algorithm that is either approximate or heuristic (i.e., not exact).
+
+\subsection{DCOP}\label{sec:dcop}
+
+Following \cite[Section $2.1$]{petcu2007thesis}, we begin by formulating the centralised
+and discrete COP.
+\begin{definition}\label{def:cop}
+    A COP is a tuple $\mathcal{P} = \langle X, D, R \rangle$, where $X$ is a set of $n$
+    variables, $X = \{x_1, \dots, x_n\}$, $D$ is a corresponding set of finite domains, $D
+    = \{D_1, \dots, D_n\}$ such that $x_i \in D_i$, and R is a set of $t$ cost functions,
+    $R = \{r_1, \dots, r_t\}$, with $r_i : D_{i_1} \times \cdots \times r_{i_h} \to
+    \mathbb{R}$, $1 \leq i \leq t$, $h \leq n$.
+    An assignment to $\mathcal{P}$ is a set of $k$ values $d = \{d_1, \dots, d_k \}$, $k
+    \leq n$, where $d_i \in D_i$. If $k < n$, $d$ is called \emph{partial assignment}, and
+    \emph{complete assignment} otherwise. An optimal solution to $\mathcal{P}$ is a
+    complete assignment $X^\ast$ that minimises the sum of all costs:
+    \begin{equation}
+        X^\ast = \arg \min_{\substack{d \in D\\ |d| = n}} \sum_{r_i \in R} r_i(d)
+    \end{equation}
+\end{definition}
+In the previous definition, the functions in $R$ are soft constraints. Nonetheless, hard
+constraints can be imposed by defining cost functions that evaluate feasible assignments
+to $0$, and unfeasible ones to $+\infty$. The discrete DCOP can be formulated as follows.
+\begin{definition}\label{def:dcop}
+    A DCOP is a tuple $\mathcal{P} = \langle A, P, R^{ia} \rangle$ such that:
+    \begin{itemize}
+        \item $A$ is a set of $m$ agents, $A = \{ A_1, \dots, A_m \}$;
+        \item $P = \{\mathcal{COP}_1, \dots, \mathcal{COP}_k\}$ is a set of disjoint COPs
+            (definition \ref{def:cop});
+        \item Each $\mathcal{COP}_i \in P$ is called the \emph{local subproblem} of agent
+            $A_i$, who owns and controls it;
+        \item $R^{ia} = \{ r_1, \dots, r_t \}$ is a set of \emph{inter-agent} cost
+            functions defined over variables from multiple local subproblems. In
+            particular, each $r_i \in R$ expresses the value of all possible joint
+            decisions that can be made by the agents that control the local subproblems
+            involved in $r_i$. The agents involved in $r_i$ have full knowledge of $r_i$
+            and are called \emph{responsible} for $r_i$.
+    \end{itemize}
+    An optimal solution to $\mathcal{P}$ is a complete assignment to all variables of all
+    local subproblems, such that the sum of all inter-agent cost functions is minimised.
+\end{definition}
+Thus, a DCOP is a multi-agent system in which each agent controls its local COP. Hard
+constraints can be imposed in DCOPs with the procedure described above for COPs. It is
+commonly assumed that every cost function is known to all involved agents.
+The DCOP is NP-hard \cite{farinelli2013dcop}.
+A typical data structure for representing a DCOP is the factor graph
+\cite{kschischang2001,loeliger2004}.
+\begin{definition}\label{def:fg}
+    A \emph{factor graph} is a bipartite graph expressing the factors of a function. The
+    factor graph of a DCOP $\mathcal{P}$ is composed of:
+    \begin{itemize}
+        \item \emph{Variable nodes}, representing the COP variables in $\mathcal{P}$;
+        \item \emph{Factor nodes}, representing all COP constraints and inter-agent
+            constraints in $\mathcal{P}$;
+        \item Undirected edges between each factor node and the variable nodes in its
+            scope.
+    \end{itemize}
+\end{definition}
+Other data structures to represent DCOPs are constraint graphs and pseudo-tree
+\cite{fioretto2018survey}. A \emph{constraint graph} is an undirected
+hypergraph\footnote{A generalisation of a graph in which an edge can join $2$ or more
+vertices.} where nodes represent the decision variables, and edges represent the
+constraints. Two nodes are in the same edge if the respective variables occur in the same
+constraint \cite{rossi2006handbook}. A \emph{pseudo-tree} is a connected pseudo-forest,
+that is, an undirected connected graph that contains at most one cycle\footnote{Connected
+acyclic graphs (trees) are therefore pseudo-trees.}.
+Constraint graphs allow to define priorities between variables, and pseudo-trees capture
+partial orders among the agents.
+
+Depending on how decision variables are updated, DCOP algorithms are divided into
+synchronous and asynchronous. \emph{Synchronous} algorithms impose an order on how agents
+make their decisions, typically through the data structure used for representation. In
+contrast, \emph{asynchronous} algorithms allow agents to make their decisions based
+uniquely on their local views of the problem. Synchronous algorithms introduce
+dependencies between agents, but guarantee that their local views are consistent with each
+other. In asynchronous algorithms, agents are independent in their decision-making, thus
+they can process messages as they receive them, but there is no consistency guarantee on
+the local views. \cite{peri2013} show that inconsistent agent views may negatively impact
+network load and thus performance. Therefore, it is never harmful to have some degree of
+synchronisation.
+
+The design of a DCOP algorithm can be of $4$ types \cite{mahmud2020b,yeoh2010}:
+\begin{itemize}
+    \item \emph{Search-based}: the search space is pruned according to problem-dependent
+        features. This approach is typically derived from centralised solutions,
+        such as \emph{Breadth-First Search} (BFS) or \gls{dfs} \cite{cormen2009};
+    \item \emph{Inference-based}: using dynamic programming or belief propagation, each
+        agent aggregates information from other agents to reduce its computation load;
+    \item \emph{Sampling-based}: the search space is sampled to generate approximate
+        solutions through statistical inference;
+    \item \emph{Population-based}: sets of candidate solutions are used to represent
+        search subspaces and avoid local optima.
+\end{itemize}
+In addition to computational complexity, DCOP algorithms can also be characterised
+according to their communication overhead. For instance, the number and size of messages,
+size of agent neighbourhoods, and whether communication is local (i.e., the messages are
+sent to neighbours only) or global (i.e., the messages are sent to all). Table
+\ref{t:dcop_chars} shows the properties of the main algorithms that we report below. We
+have chosen this set on the basis of relevance to our context. For instance, we preferred
+ADOPT instead of OptAPO \cite{grinshpoun2008} because, although both partially
+centralised, OptAPO has global communication, and we excluded MGM \cite{maheswaran2004a}
+because it is the deterministic predecessor of DSA, which has the same computational
+complexity and is more used.
+Apart from the algorithms listed in Table \ref{t:dcop_chars}, we also report $7$ recent
+algorithms not present in the latest DCOP survey \cite{fioretto2018survey}, namely: GDBA
+\cite{okamoto2016}, CoCoA \cite{van2017}, ACO\_DCOP \cite{chen2018acodcop}, COOPT
+\cite{leite2019b}, LSGA \cite{chen2020lsga}, AED \cite{mahmud2020a} and DPSA
+\cite{mahmud2020b}.
+We adopt the following notation: $n$ is the number of decision variables; $d$ is the size
+of the largest decision variable domain; $w$ is the induced width of the pseudo-tree; $l$
+is the largest number of agent neighbours; $t$ is the number of iteration cycles (in
+incomplete algorithms).
+
+\begin{table}[t]
+    \centering
+    \resizebox{\textwidth}{!}{%
+    \begin{tabular}{cccccccc}
+        \toprule
+        Algorithm & Error bound & Time complexity & Anytime &
+        \begin{tabular}{@{}c@{}}Space complexity\\per agent\end{tabular} &
+        \begin{tabular}{@{}c@{}}Number of\\messages\end{tabular} & Message size
+        & \begin{tabular}{@{}c@{}}Local\\communication\end{tabular}\\
+        \midrule
+        %SyncBB  & $\checkmark$ & $O(d^n)$   & $\checkmark$ & $O(n)$      & $O(d^n)$ & $O(n)$     & $\times$\\
+        AFB     & $\checkmark$ & $O(d^n)$   & $\checkmark$ & $O(n)$      & $O(d^n)$ & $O(n)$     & $\times$\\
+        ADOPT   & $\checkmark$ & $O(d^n)$   & $\times$     & $O(n + ld)$ & $O(d^n)$ & $O(n)$     & $\checkmark$\\
+        DPOP    & $\checkmark$ & $O(d^{w})$ & $\times$     & $O(d^w)$    & $O(n)$   & $O(d^{w})$ & $\checkmark$\\
+        %OptAPO  & $\checkmark$ & $O(d^n)$   & $\times$     & $O(ld)$     & $O(d^n)$ & $O(d + n)$ & $\times$\\
+        \midrule
+        DSA         & $\times$     & $O(tld)$  & $\times$     & $O(l)$      & $O(tnl)$    & $O(1)$   & $\checkmark$\\
+        D-Gibbs     & $\checkmark$ & $O(tld)$  & $\checkmark$ & $O(l)$      & $O(tnl)$    & $O(1)$   & $\checkmark$\\
+        $k$-optimal & $\times$     & $O(ld^w)$ & $\checkmark$ & $O(d^w)$    & $O(n^{2}l)$ & $O(d^w)$ & $\times$\\
+        Max-Sum     & $\times$     & $O(td^l)$ & $\times$     & $O(d^l)$    & $O(tnl)$    & $O(d)$   & $\checkmark$\\
+        %GDBA        & $\times$     & $O(tld)$  & $\times$     & $O(ld^{2})$ & $O(tnl)$    & $O(1)$   & $\checkmark$\\
+        \bottomrule
+    \end{tabular}}
+    \caption[Characteristics of main DCOP algorithms]{Characteristics of main DCOP
+    algorithms \cite{fioretto2018survey}. The top side rows refer to exact algorithms,
+    while those on the bottom side refer to incomplete algorithms.}
+    \label{t:dcop_chars}
+\end{table}
+
+\paragraph{AFB}
+
+\emph{Asynchronous Forward Bounding} \cite{gershman2009afb} is an exact, asynchronous and
+search-based algorithm, which uses a branch-and-bound approach and a shared data structure
+called \emph{Current Partial Assignment} (CPA). As the name indicates, the CPA stores the
+current partial assignment to the decision variables of the problem. The CPA starts empty
+and is extended in sequence by each agent. When an agent has to assign values to its
+decision variables in the CPA, it is called the \emph{assigning agent}; agents that
+have not done it yet are called \emph{unassigned agents}. Each assigning agent $a_{CPA}$
+sends a copy of the CPA \emph{forward} to each unassigned agent. Upon receiving a CPA
+copy, each unassigned agent estimates a lower bound on the cost of the CPA based on its
+local view of the problem, and sends it to $a_{CPA}$. Once $a_{CPA}$ has (asynchronously)
+received the estimations from all unassigned agent, it uses them to compute a new lower
+bound. If this new lower bound is greater than the current upper bound, that is, the cost
+of the best solution found so far, $a_{CPA}$ starts a backtracking phase.
+The computational complexity of AFB depends entirely on the first assigning agent
+$a_{CPA}^1$: time and message size are both $O(n)$, since $a_{CPA}^1$ evaluates, stores
+and sends the value assignment of all decision variables; the number of messages is
+$O(n)$, as $a_{CPA}^1$ lists all possible value combinations of the decision variables,
+and sends a message for each. Because assigning agents may broadcast messages,
+communication is not local.
+
+\paragraph{ADOPT}
+
+\emph{Asynchronous Distributed OPTimisation} \cite{modi2005adopt,junges2008} is an exact,
+asynchronous and search-based algorithm. It was the first DCOP algorithm able to provide
+optimal solutions through asynchronous local communication. Its operation is as follows.
+The agents are prioritised in a \emph{Depth-First Search} (DFS) \cite{cormen2009}
+pseudo-tree in which each node has a single parent and multiple children. Assignments are
+propagated downwards the tree, while costs are propagated upwards. Additionally, threshold
+messages are propagated downwards to minimise redundant searches. Each agent node stores
+lower and upper bounds on the cost of the partial assignment, expressed by the subtree of
+which it is root. The DFS structure allows agents to choose partial assignments using a
+BFS strategy. In other words, each agent always chooses the partial assignment with the
+smallest lower bound. Through the flow of messages, the lower and upper bounds of each
+agent node are iteratively tightened until they coincide. When that happens, the node is
+said to be terminated. The whole procedure is completed when all nodes terminate. This is
+detected by the root agent, which aggregates the global cost bounds and detects the
+termination of its children.
+Similar to AFB, the time complexity of ADOPT is $O(d^n)$, since the root agent needs to
+evaluate all possible value combinations of all its children. Accordingly, the message
+size is $O(n)$. The space complexity per agent is $O(n + ld)$, where $O(n)$ is used to
+store the partial assignments under investigation, and $O(ld)$ is used to store the lower
+and upper bounds. Finally, the tree structure implies a local communication, while the BFS
+strategy for backtracking prevents the algorithm from being anytime.
+
+\paragraph{DPOP}
+
+\emph{Distributed Pseudo-tree Optimisation Procedure} \cite{petcu2005,junges2008} is an
+exact, synchronous and inference-based algorithm. Based on the Sum-Product algorithm
+\cite{kschischang2001}, it starts by ordering agents through a DFS pseudo-tree, then
+it explores the search space through a dynamic programming technique. Like ADOPT, the
+exploration is done via message propagation, except that the messages contain utility
+values, given that the algorithm is based on maximisation problems. Once the
+pseudo-tree is constructed, there are $2$ message propagations: from leaves to root, and
+then from root to leaves. In the first propagation, each node aggregates the utility
+messages from its children, which then uses to compute its utility message to send to its
+parent. In the second propagation, each node computes the optimal overall utility of its
+variable and sends a message to its children containing its assignment.
+Given the pseudo-tree structure, the complexity for space, time and message size is the
+same: $O(d^w)$. The number of messages is $O(n)$, since each agent sends at most $n$
+messages at each propagation phase, and communication is local. An approximate version of
+DPOP has been proposed by \cite{petcu2005b}.
+
+\paragraph{DSA}\label{sec:dsa}
+
+The term \emph{Distributed Stochastic Algorithm} \cite{zhang2005} identifies a class of
+incomplete, synchronous and search-based algorithms. The basic structure is the
+following. Agents initially give random utilities to their assignments, then loop
+through a sequence of actions until all constraints are satisfied. At loop iteration $t$,
+each agent sends its utility to the neighbours if it changed in iteration $t-1$, then it
+receives their eventual new utilities. The neighbourhoods are defined by the data
+structure used to represent the problem. Upon receiving its neighbour messages, each agent
+stochastically decides whether to keep its current utility (and thus, current assignment)
+or change it according to some strategy, to reduce the number of violated constraints. The
+DSA algorithms vary in how this strategy is defined.
+The time complexity is $O(ld)$, given that each agent has to calculate the utility of it
+assignments considering the utilities of its neighbours. The space complexity is $O(l)$,
+since each agent sends a message to each neighbour. Consequently, the total
+number of messages is $O(tnl)$. The size of each message is $O(1)$, given that it only
+contains the value of a given assignment. Finally, agents communicate only with their
+neighbours.
+Even though DSA algorithms have no quality guarantees, their performance has been
+extensively demonstrated in practice, to the point that they are commonly used as
+baselines in DCOP benchmarks \cite[Section $4.4.2$]{fioretto2018survey}. The
+state-of-the-art variant is DSA-SDP \cite{zivan2014}.
+
+\paragraph{D-Gibbs}
+
+\emph{Distributed Gibbs} \cite{nguyen2019} is an incomplete, synchronous and
+sampling-based algorithm that reduces the DCOP formulation to a maximum a posteriori
+estimation, to which it applies the Gibbs sampling process \cite{geman1993} in a
+decentralised manner. Operating on a pseudo-tree arrangement, each agent computes a joint
+probability distribution of its current partial assignment, which then uses to decide its
+value assignments. Such assignments are propagated down to the leaves, then cost
+information is propagated up to the root. The process continues until convergence or a
+fixed number of iterations is reached.
+The time complexity of D-Gibbs is $O(tld)$, as each agent computes the cost of an
+assignment considering the cost values received by its children. The space complexity is
+$O(l)$, since each agent only needs to store the current values of its children. The total
+number of messages is $O(tnl)$, given that each agent sends a message to each of its
+children in the first propagation phase. The size of each message is constant, because
+agents only send values or costs. Finally, given the pseudo-tree structure,
+communication is local.
+
+\paragraph{$k$-Optimal}
+
+\cite{pearce2007} is a class of incomplete, synchronous and search-based algorithms, which
+decomposes a DCOP into a set of subproblems, each of which involves at most $k$ agents.
+The solution process continues until no subset of $k$ or fewer agents can improve the
+global solution. These algorithms are anytime and guaranteed to find a lower bound on the
+solution quality. However, to eliminate conflicts between partial solutions, each agent
+may need to communicate with every other agent. Consequently, communication is not local,
+and both time and space complexity are exponential in the number of agents. Such
+limitations are also present in the variants proposed in
+\cite{kiekintveld2010,vinyals2011}. The $k$-optimality concept can also be used to
+characterise the solution quality of a DCOP algorithm in an \emph{offline} manner, that
+is, without solving specific problem instances, and consequently providing general results
+\cite{farinelli2013dcop}.
+% an antithetic approach is that of Bounded Max-Sum, which actually requires to solve
+% problem instances, but by virtue of this it can exploit knowledge of the instances being
+% solved, and thus provide tighter quality bounds than an offline counterpart.
+
+\paragraph{Max-Sum}
+
+\cite{farinelli2008} is an incomplete, synchronous and inference-based algorithm. Based
+on a factor graph representation of the problem, it optimises the marginal costs of each
+decision variable through belief propagation, similar to the Sum-Product algorithm
+\cite{kschischang2001}. Convergence to an optimal solution is guaranteed for acyclic
+factor graphs only.
+The space and time complexity is $O(d^l)$, since each agent needs to store and optimise on
+the assignments propagated from its neighbours. As a consequence, the total number of
+messages is $O(tnl)$. The size of each message is $O(d)$, since it contains the value of
+all the possible assignments of each variable. Max-Sum has been widely extended, among the
+most notable variants we mention: bounded Max-Sum \cite{rogers2011,rollon2012}, which
+bounds the solution quality by first turning cyclic graphs into spanning trees;
+Max-Sum\_ADVP, which converges polynomially on acyclic graphs using a double-phase value
+propagation \cite{zivan2012,chen2017}; Max-Sum with damping \cite{cohen2017}, which is
+guaranteed to converge to optimal solutions in weakly polynomial time. Max-Sum and its
+variants have been successfully deployed in disaster response
+\cite{ramchurn2015b,ramchurn2015c,ramchurn2016,dellefave2010,dellefave2012a,dellefave2012b,stranders2010,pujol2018,stranders2009,yedidsion2018}
+and various other domains, such as sensor networks, service-oriented computing, smart
+grid, and traffic management \cite{fioretto2018survey}.
+
+\paragraph{GDBA}
+
+\emph{Generalised DBA} \cite{okamoto2016} is a class of incomplete, synchronous and
+search-based algorithms that extend the \emph{Distributed Breakout Algorithm} (DBA)
+\cite{yokoo1996} to solve DCOPs. These algorithms are not anytime, but can be made so
+with the Anytime Local Search framework\footnote{In general, this framework can be
+used with any other incomplete and synchronous DCOP algorithm that is not anytime, such as
+DSA or Max-Sum.} \cite{zivan2014}. Moreover, they have polynomial space and time
+complexity, and local communication. The results reported in \cite{mahmud2020b,zivan2014}
+suggest that the $(N, NM, T)$ variant has similar performance to DSA-SDP (Page
+\pageref{sec:dsa}). Each GDBA variant has the same time and space complexity as DBA.
+\clearpage
+
+\paragraph{CoCoA}
+
+\emph{Cooperative Constraint Approximation} \cite{van2017}
+is an incomplete, asynchronous and search-based algorithm based on: a one-step look ahead
+to assess how much an assignment might impact neighbours; a unique-first approach that
+selects an assignment only if it is a unique local optimum, and a global state machine
+that helps the algorithm to terminate. It has $2$ limitations: the state machine forces
+the communication to be global, while the one-step look ahead does not make it possible
+to use the algorithm in dynamic environments (see Section \ref{sec:an1} for a detailed
+explanation).
+
+\paragraph{ACO\_DCOP}
+
+\emph{Ant Colony Optimisation DCOP} \cite{chen2018acodcop} was the first population-based
+DCOP algorithm, based on the homonymous swarm intelligence metaheuristic
+\cite{dorigo2006ant}. It is incomplete and asynchronous. Moreover, it is proven to be
+anytime, and has polynomial time and space complexity. Its drawback is the requirement of
+global communication, since ants (agents) lay pheromone to mark the promising paths
+(solution subspaces) that other members of the colony should follow (investigate).
+
+\paragraph{COOPT}
+
+\emph{Coupled Oscillator OPTimisation} \cite{leite2019b}
+is an incomplete, synchronous and search-based algorithm inspired by the synchronisation
+process in coupled oscillator networks. It is anytime, scalable and guaranteed to
+converge, and has a communication overhead similar to DSA-SDP. However, it uses a global
+communication model.
+
+\paragraph{LSGA}
+
+\emph{Local Search Genetic Algorithm} \cite{chen2020lsga}
+constitutes a population-based hybrid framework that uses genetic operators to improve
+local explorations and avoid local optima. Solutions are constructed by global fitness
+functions, which detect and solve conflicts between partial candidate solutions. LSGA is
+incomplete and asynchronous, with linear time and space complexity. Although it can be
+used in conjunction with any search-based algorithm,
+%(e.g., the authors evaluate its use with DSA-C, DSAN \cite{arshad2004dsan} and MGM),
+it cannot provide anytime solutions.
+
+\paragraph{AED}
+
+\emph{Anytime Evolutionary DCOP} \cite{mahmud2020a}
+is an incomplete, synchronous and population-based algorithm based on the following
+evolutionary process. Each agent starts with a set of randomly generated candidate
+solutions (local population). In a series of iterations, the candidate solutions are first
+mutated (reproduction), then the least promising ones are discarded with a stochastic
+procedure. AED is anytime, has polynomial time and space complexity, and uses a local
+communication model. Its performance depends on tuning parameters ($\alpha$ and $\beta$),
+which define the balance between exploration and exploitation of the solution space.
+Consequently, it may require a non-trivial tuning phase to achieve the best results with
+specific problems. In fact, in \cite{mahmud2020b}, it (slightly) outperforms LSGA in only
+$2$ out of $5$ test suites.
+\clearpage
+
+\paragraph{DPSA}
+
+\emph{Distributed Parallel Simulated Annealing} \cite{mahmud2020b} is an incomplete and
+asynchronous algorithm, with an approach based on both population and local search,
+similar to LSGA. It runs parallel instances of the Distributed Simulated Annealing
+algorithm \cite{arshad2004dsan}, each of which is fine-tuned using
+\emph{Cross-Entropy sampling} (CE) \cite[Section $9.7.3$]{kroese2013} to avoid convergence
+to local optima \cite{zivan2014}. Like AED, it is anytime, has polynomial time and space
+complexity, is based on a local communication model, and depends on initial parameters
+(the CE vector $\theta$). To alleviate the last point, the authors provide a
+pre-processing phase called \emph{Greedy Baseline} (GB). Despite requiring fewer
+parameters than AED, DPSA still needs an initial tuning. In the scenarios we are
+interested in, first responders may be deployed at short notice, or the situation may
+evolve rapidly, hence prior knowledge about the search space of $\theta$ may not be
+available, and the GB phase may have poor performance.
+
+\subsection{Dynamic DCOP}\label{sec:lit-dyndcop}
+
+In real-world scenarios, the environment may change over time. In disaster response, for
+instance, new information may become available after the start of the mission (e.g., an
+update of the number of victims, or new evacuation priorities), agents may fail, or more
+may be added to the system. The \gls{dyndcop} is a generalisation of the DCOP capable of
+addressing such situations. Like the DCOP, it has deterministic agent behaviour, total
+agent knowledge, cooperative agent coordination, and deterministic environment behaviour.
+The only difference is that the environment evolution is dynamic.
+
+\begin{definition}\label{def:dyndcop}
+    A DynDCOP is a sequence of DCOPs, $\mathcal{D}_1, \dots, \mathcal{D}_T$, where each
+    $\mathcal{D}_t$ is the DCOP at time step $t$. The objective is to optimally solve
+    $\mathcal{D}_t$, $\forall t \leq T$.
+\end{definition}
+
+Although it is assumed that agents have total knowledge about their current DCOP, they are
+unaware of how the problem may changes in the future. The naive solution to a DynDCOP is
+to solve each $\mathcal{D}_t$ with a DCOP algorithm. However, a clever algorithm design
+can exploit the \emph{self-stabilising} property of dynamical systems \cite{schneider1993}
+and minimise the number of iterations necessary to converge to a solution.
+
+\begin{definition}\label{def:self-stabilising}
+    A DynDCOP is \emph{self-stabilising} if and only if: a solution to $\mathcal{D}_t$ is
+    obtained from a solution to $\mathcal{D}_{t-1}$ (\emph{convergence}); a solution does
+    not change after convergence (\emph{closure}).
+\end{definition}
+
+\begin{table}[t]
+    \centering
+    \resizebox{\textwidth}{!}{%
+    \begin{tabular}{cccccccc}
+        \toprule
+        Algorithm & Error bound & Time complexity & Anytime &
+        \begin{tabular}{@{}c@{}}Space complexity\\per agent\end{tabular} &
+        \begin{tabular}{@{}c@{}}Number of\\messages\end{tabular} & Message size
+        & \begin{tabular}{@{}c@{}}Local\\communication\end{tabular}\\
+        \midrule
+        I(-BnB)-ADOPT & $\checkmark$ & $O(Td^n)$   & $\times$     & $O(n + ld)$ & $O(Td^n)$ & $O(n)$   & $\checkmark$\\
+        S-DPOP        & $\checkmark$ & $O(Td^{w})$ & $\times$     & $O(d^w)$    & $O(Tn)$   & $O(d^w)$ & $\checkmark$\\
+        \midrule
+        FMS           & $\times$     & $O(Ttd^l)$  & $\times$     & $O(d^l)$    & $O(Ttnl)$ & $O(d)$   & $\checkmark$\\
+        SBDO          & $\checkmark$ & $O(Td^n)$   & $\checkmark$ & $O(n)$      & $O(Td^n)$ & $O(n)$   & $\checkmark$\\
+        \bottomrule
+    \end{tabular}}
+    \caption[Characteristics of the DynDCOP algorithms proposed to date]{Characteristics
+    of the DynDCOP algorithms proposed to date, where $T$ denotes the total number of
+    time steps, and the other variables are the same as those used in Table
+    \ref{t:dcop_chars}. The top side rows refer to exact algorithms, while those on
+    the bottom side refer to incomplete algorithms.}
+    \label{t:dyndcop_chars}
+\end{table}
+
+The DynDCOP is NP-hard, since it requires to solve a series of DCOPs. Dynamic
+environments pose a challenge to the DCOP research community
+\cite{barambones2021survey,fioretto2018survey,leite2014survey,lesser2014,petcu2007thesis},
+to the extent that only four DynDCOP algorithms have been proposed to date\footnote{We
+exclude algorithms proposed for variants of the DynDCOP \cite[Section
+$4.4$]{barambones2021survey}, as they are less general, or are extensions of DCOP
+algorithms, such as \cite{zivan2015}.}: the exact I(-BnB)-ADOPT and S-DPOP, and the
+incomplete SBDO and FMS.
+
+\paragraph{I(-BnB)-ADOPT}
+
+\emph{Incremental anyspace (Branch-and-Bound) ADOPT} \cite{yeoh2015} is an exact,
+asynchronous and search-based algorithm that extends (Branch-and-Bound) ADOPT. Inspired by
+the \emph{Multi-agent Organisation with Bounded Edit Distance} (MOBED) algorithm
+\cite{sultanik2009}, in order to minimise computations, it uses an incremental pseudo-tree
+reconstruction that reuses parts of the pseudo-tree of $\mathcal{D}_{t - 1}$ to construct
+the pseudo-tree of $\mathcal{D}_t$. The computational complexity and communication
+requirements are the same as in ADOPT. However, having the anyspace property, this variant
+can use more computational space, when available, to improve the runtime.
+
+\paragraph{S-DPOP}
+
+\emph{Self-stabilising DPOP} \cite{petcu2005b} is an extension of DPOP in which both the
+DFS pseudo-tree generation and the message propagation phases are re-executed whenever the
+DCOP formulation changes. The computational complexity and communication requirements are
+the same as those of DPOP. In addition, when the problem changes, S-DPOP stabilises in
+$O(t_d)$ utility messages (first propagation) and in $O(k)$ assignment (second
+propagation), where $t_d$ is the depth of the pseudo-tree, and $k$ is the number of
+utility functions.
+
+\paragraph{SBDO}
+
+\emph{Support-Based Distributed Optimisation} \cite{billiau2012} is an incomplete,
+asynchronous and search-based algorithm that extends the \emph{Support-Based Distributed
+Search} algorithm \cite{harvey2006} to multi-agent systems. In SBDO, each
+agent tries to send stronger arguments over time to influence its neighbours. Despite
+being anytime, SBDO has exponential runtime, being similar to SyncBB \cite{hirayama1997}.
+\cite{billiau2014} proposed an extension to solve multi-objective DCOPs.
+
+\paragraph{FMS}\label{sec:lit-fms}
+
+\emph{Fast Max-Sum} \cite{ramchurn2010fms} is the dynamic version of the incomplete
+Max-Sum, in which, at iteration $t$, solution stability is guaranteed by recalculating
+only the factors that changed between $\mathcal{D}_{t - 1}$ and $\mathcal{D}_t$. Thus, the
+computational complexity does not change. FMS has been extended to provide error bounds on
+the solution \cite{macarthur2010}, and to speed up the message propagation via
+branch-and-bound pruning \cite{macarthur2011}. In addition, it can be further accelerated
+using the generic approaches proposed by \cite{khan2018,chen2019,zaoad2021}.
+\clearpage
+
+\section{Our Chosen Approach}\label{chap2:choice}
+
+In the previous sections, we discussed state-of-the-art cooperative coordination
+approaches based on game theory, decision theory and constraint programming. As we
+mentioned in Section \ref{sec:objectives}, the approach we choose is constraint
+programming, and specifically the DynDCOP. We give our technical motivations in the
+following paragraphs.
+
+\paragraph{Why Not Game Theory}
+
+Despite the advantages offered by the analytical approach, game theory has some
+limitations in our context. First of all, it is possible to define models applicable to
+specific problems, but it is not possible to define a general model to govern rational
+choice in interdependent situations \cite{zeng1996}. Moreover, it is often assumed
+perfect computational rationality \cite{lewis2014,gershman2015}, meaning that it is not
+necessary to perform calculations to find an acceptable solution in a set of possible
+outcomes. This is not realistic, since an agent can know its own space of solutions, but
+not that of others. Nonetheless, even if there was a shared solution space, knowing that a
+solution exists does not generally imply knowing what it is.
+Most CF models assume a limiting superadditive environment, since otherwise the
+computational complexity can be exponential \cite[Section $2.2$]{sandholm1999}. The
+computations can be distributed and hence decentralised (Requirement R1), but not always
+this process is balanced, in the sense that some agents will have to compute more
+than others. This issue is known as \emph{coalition imbalance}, and can lead to situations
+where some agents have a dominant share of the capabilities. An \emph{imbalanced}
+coalition relies more on its dominant agents, thus it is less fault-tolerant (Requirement
+R4).
+There are methods for partitioning the computational load almost equally, such as in
+auctions and blockchains, but at the cost of a major increase in complexity. In auctions,
+for instance, two open problems are efficiently minimising the communication overhead
+\cite{gerkey2004}, and characterising the ability of agents to respond quickly to dynamic
+environments \cite{dias2006}.
+
+\paragraph{Why Not Decision Theory}
+
+In decision theory, although there are algorithms able to handle large domain spaces
+successfully \cite{capitan2013}, scalability remains a critical challenge, especially with
+POMDP formulations \cite{seuken2008,amato2013}. Popular models such as the Dec-POMDP
+\cite{bernstein2002} or the Networked Distributed POMDP \cite{nair2005nd} are
+NEXP-complete even for scenarios with just $2$ agents, therefore they are limited to very
+small problems or subject to conditions with loss of generality \cite{kumar2011}. Other
+common models require noiseless channels or instantaneous communication between agents
+\cite{pynadath2002,nair2004,roth2005}, which in general is not possible in decentralised
+environments like disaster response.
+\clearpage
+
+\paragraph{Why Constraint Programming}
+
+For the above reasons, we regard the DynDCOP to be the most suitable for modelling
+distributed multi-agent cooperative coordination in dynamic environments. This model
+allows to consider the aspects that we aim for, such as autonomous decision-making,
+cooperation, and resilience (Section \ref{sec:objectives}). Moreover:
+\begin{itemize}
+    \item Communication strategies and problem solving are directly linked in (Dyn)DCOPs:
+        the structure of the interaction graph can be exploited to generate efficient
+        solutions;
+    \item By definition, (Dyn)DCOPs focus on decentralisation, in particular because the
+        constraints are decomposable, and agents can cooperatively define global solutions
+        through local communication, as required in point-to-point environments such as
+        those considered in disaster response;
+    \item As we have seen in Section \ref{sec:dcop0}, there is a vast choice of (Dyn)DCOP
+        models and algorithms, many of which have been successfully applied in disaster
+        response, as well as many other real-world scenarios
+        \cite{cerquides2013,fioretto2018survey,barambones2021survey}.
+\end{itemize}
+As anticipated by Figure \ref{fig:relationships}, in the following chapters we will come
+to reduce both the CFSTP and the novel MARSC to the DynDCOP model.
+Using this reduction, we will create the first DynDCOP algorithm to be simultaneously
+anytime, efficient, convergent, and with local communication.
+
+\section{Problems Similar to the CFSTP}\label{chap2:limitations}
+
+Many problems similar to the CFSTP have been studied to date
+\cite{rizk2019survey,dadvar2021,murphy2016a,murphy2016b,paraskevopoulos2017,seenu2020survey,queralta2020survey,rizk2019survey,juarez2021}.
+We mention below those that come closest to our target (Section \ref{sec:objectives}).
+\cite{scerri2005} were the first to investigate time windows and interdependent
+simultaneous tasks in cooperative coordination, while \cite{vig2006,service2011} applied
+the seminal work of \cite{shehory1998} to multi-robot systems. However, none of them not
+consider situations where task scheduling is required (Assumptions A1, A2, and A5).
+\cite{vig2006} was extended in \cite{vig2007} with task preemption and precedence
+relations, but no spatio-temporal constraints nor multiple possible locations per task
+(Assumptions A1 and A3). \cite{zlot2006thesis} defined a problem where tasks are
+decomposable in multiple ways, but do not have precedence relations (Assumption A2).
+\cite{singh2014,su2018} studied multi-agent CF in dynamic environments, the former only
+with task priorities and the latter only with temporal constraints, while \cite{luo2015}
+focused on multi-robot CF only with deadline constraints. \cite{ayari2017} proposed a
+dynamic, decentralised and efficient CF heuristic for MRTA problems with priority
+constraints, however ignoring spatio-temporal constraints, task resources and
+multiple possible locations per task (Assumptions A1, A3 and A4).
+\cite{nelke2020,tkach2021} studied a CFSTP variant with task weights and soft deadlines,
+but without taking into account task precedences, time windows and multiple possible
+locations per task (Assumptions A$1 - 3$). \cite{bischoff2020} considered multi-agent CF
+with task precedences and no spatio-temporal constraints (Assumption A1).
+\cite{suslova2020} focused on multi-agent CF with time windows and ordering constraints,
+but in the special case where each task has the same weight and only one possible
+location, while coalitions are superadditive (i.e., the duration of a task depends only on
+the size of the assigned coalition). Similar to \cite{krausburg2021} (Section
+\ref{sec:cf}), \cite{prantare2020,prantare2021} proposed a generalisation of the CSG
+problem able to capture task allocation with ordering constraints, but without
+spatio-temporal constraints, multiple possible locations per task, and task workloads
+(Assumptions A1, A3, and A4). \cite{arif2021} applied evolutionary computation to
+multi-robot CF considering only homogeneous robots and no operational constraints.
+
+Although they do not focus on CF, the following works have features of interest to our
+domain.
+\cite{barbulescu2010} considered task allocation for a team of agents with temporal,
+ordering and synchronisation constraints. As teams differ from coalitions (Figure
+\ref{fig:coalition-team}), they do not consider routing constraints due to CF over time
+and in different locations.
+\cite{korsah2011thesis} investigated spatio-temporal constraints, task precedences and
+multiple possible locations per task, while \cite{godoy2013,nunes2017} studied
+problems with time windows, and spatial and precedence constraints. \cite{maoudj2015}
+studied MRTA with precedence constraints, robot capability constraints, and robot resource
+constraints.
+\cite{nanjanath2010} applied combinatorial auction to MRTA in dynamic environments, with
+precedence constraints and time windows.
+%and proposed experiments with the RoboCup Rescue Simulation.
+\cite{whitbrook2015,whitbrook2018,whitbrook2019} proposed distributed and resilient
+heuristics for real-time task allocation in multi-agent systems. % also studied uncertainty
+\cite{feo2021} proposed decentralised, anytime and efficient algorithms for multi-robot
+routing and scheduling with heterogeneous agents, non-atomic tasks (i.e., preemptable),
+task workloads, and spatio-temporal constraints. % no CF, no real-time objective
+Targeting large-scale multi-UAV flood response problems, \cite{ghassemi2021} defined a
+bigraph-based, scalable and online algorithm for MRTA in dynamic environments, with tasks
+deadlines and limited robot resources. % ST-SR
+\cite{ferreira2021} created a distributed metaheuristic for multi-robot scheduling with
+precedence constraints, based on a hierarchical task representation.
+
+In the taxonomy of \cite{korsah2013taxonomy}, which extends that of
+\cite{gerkey2004}, the CFSTP is defined as a \emph{Cross-schedule Dependent Single-Task
+Multi-Robot Time-extended Assignment} (XD-ST-MR-TA) problem, where:
+\begin{itemize}
+    \item ST means that each robot may work on at most one task at a time;
+    \item MR implies that a task may require multiple robots, and thus coalition
+        formation;
+    \item TA indicates that each robot may have to work on multiple tasks according to
+        some schedule;
+    \item XD means that the schedule of an agent may also depend on the schedules of other
+        agents. For instance, if we have $2$ tasks and $2$ agents, and the first task
+        requires $2$ agents, while the second task requires only one, then the
+        first task can be executed only if the second has been completed, or no agent is
+        working on it.
+\end{itemize}
+To date, the main approaches proposed to solve XD-ST-MR-TA problems utilise linear
+programming \cite{bogner2018,koes2005,korsah2011thesis}, automated negotiation
+\cite{krizmancic2020} and memetic algorithms \cite{liu2015}. However, either they do not
+produce anytime solutions \cite{krizmancic2020,liu2015}, or do not have theoretical
+properties \cite{bogner2018}, or are based on models simpler than the CFSTP
+\cite{koes2005,korsah2011thesis}.
+Multi-agent approaches that solve similar problems typically make use of social insects
+\cite{dos2011,ferreira2010,ferreira2007,schwarzrock2018,amorim2020}, automated negotiation
+\cite{gallud2018,godoy2013,ye2013,nelke2020,tkach2021} and evolutionary computation
+\cite{zhou2020}, but without considering the anytime property.
+
+Although each of the works considered has interesting aspects, we note that no one meets
+all our requirements and assumptions. Consequently, given the importance of the CFSTP
+(Section \ref{sec:pstat}), after filling main gaps in its literature in Chapters
+\ref{chap:contrib1} and \ref{chap:contrib2}, we will conclude by presenting in Chapter
+\ref{chap:contrib3} a generalisation able to capture more complex problems in disaster
+response, as well as in real-time CF problems in general.

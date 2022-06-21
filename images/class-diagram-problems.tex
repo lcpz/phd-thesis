@@ -1,0 +1,26 @@
+\begin{tikzpicture}
+    \begin{scope}%[set style={{every node}=[draw]}]
+        \node (cfstp) at (0,  0) {CFSTP};
+        \node (marsc) at (4,  0) {\textbf{MARSC}};
+        \node (ddcop) at (8,  0) {DynDCOP};
+        \node (top)   at (0, -2) {TOP};
+        \node (toptw) at (4, -2) {TOPTW};
+        \node (dcop)  at (8, -2) {DCOP};
+        \node (vrpp)  at (0, -4) {VRPP};
+        \node (vrp)   at (4, -4) {VRP};
+        \node (tsp)   at (8, -4) {TSP};
+    \end{scope}
+    \begin{scope}[-{Triangle[open]}] % generalisation
+        \draw (tsp)   -- (vrp);
+        \draw (vrp)   -- (vrpp);
+        \draw (top)   -- (toptw);
+        \draw (top)   -- (cfstp);
+        \draw (toptw) -- (marsc);
+        \draw (cfstp) -- (marsc);
+        \draw (dcop)  -- (ddcop);
+    \end{scope}
+    \begin{scope}[Straight Barb-] % association
+        \draw (vrpp)  -- (top)   node[fill=white, outer sep=0, pos=0.5] {\small variant of};
+        \draw (ddcop) -- (marsc) node[pos=0.5, above, sloped] {\small reduced to};
+    \end{scope}
+\end{tikzpicture}

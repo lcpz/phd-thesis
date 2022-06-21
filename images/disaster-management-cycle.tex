@@ -1,0 +1,13 @@
+\begin{tikzpicture}
+    \tiny
+
+    \draw[-{Implies},double,line width=0.25] (-1,  0) to [bend left=45] ( 0,  1);
+    \draw[-{Implies},double,line width=0.25] ( 0,  1) to [bend left=45] ( 1,  0);
+    \draw[-{Implies},double,line width=0.25] ( 1,  0) to [bend left=45] ( 0, -1);
+    \draw[-{Implies},double,line width=0.25] ( 0, -1) to [bend left=45] (-1,  0);
+
+    \node[fill=white,inner sep=0,outer sep=0] at (-0.75, 0.5) {Mitigation};
+    \node[fill=white,inner sep=0,outer sep=0] at (0.75, 0.5) {Preparation};
+    \node[fill=white,inner sep=0,outer sep=0] at (0.75, -0.5) {Response};
+    \node[fill=white,inner sep=0,outer sep=0] at (-0.75, -0.5) {Recovery};
+\end{tikzpicture}

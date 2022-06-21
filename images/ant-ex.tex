@@ -1,0 +1,53 @@
+\begin{tikzpicture}
+    \node[inner sep=0,outer sep=0] at (0, 8) {$\hphantom{0}0 \quad
+        (\underline{v_1, v_2}, v_3, v_4) \quad \hphantom{0}\bm{1}$};
+    \node[inner sep=0,outer sep=0] at (0, 7) {$\hphantom{0}1 \quad
+        (\underline{v_2, v_1}, v_3, v_4) \quad \hphantom{0}\bm{2}$};
+    \node[inner sep=0,outer sep=0] at (0, 6) {$\hphantom{0}2 \quad
+        (\underline{v_3, v_1}, v_2, v_4) \quad \hphantom{0}\bm{3}$};
+    \node[inner sep=0,outer sep=0] at (0, 5) {$\hphantom{0}3 \quad
+        (\underline{v_1, v_3}, v_2, v_4) \quad \hphantom{0}\bm{4}$};
+    \node[inner sep=0,outer sep=0] at (0, 4) {$\hphantom{0}4 \quad
+        (\underline{v_2, v_3}, v_1, v_4) \quad \hphantom{0}\bm{5}$};
+    \node[inner sep=0,outer sep=0] at (0, 3) {$\hphantom{0}5 \quad
+        (\underline{v_3, v_2}, v_1, v_4) \quad \hphantom{0}\bm{6}$};
+    \node[inner sep=0,outer sep=0] at (0, 2) {$\hphantom{0}6 \quad
+        (\underline{v_4, v_2}, v_1, v_3) \quad \hphantom{0}\bm{7}$};
+    \node[inner sep=0,outer sep=0] at (0, 1) {$\hphantom{0}7 \quad
+        (\underline{v_2, v_4}, v_1, v_3) \quad \hphantom{0}\bm{8}$};
+
+    \node[inner sep=0,outer sep=0] at (5, 8) {$\hphantom{0}8 \quad
+        (\underline{v_1, v_4}, v_2, v_3) \quad \hphantom{0}\bm{9}$};
+    \node[inner sep=0,outer sep=0] at (5, 7) {$\hphantom{0}9 \quad
+        (\underline{v_4, v_1}, v_2, v_3) \quad \bm{10}$};
+
+    \node[inner sep=0,outer sep=0] at (5, 6) {$10 \quad (v_2, v_1, v_4, v_3) \quad 10$};
+    \node[inner sep=0,outer sep=0] at (5, 5) {$11 \quad (v_1, v_2, v_4, v_3) \quad 10$};
+    \node[inner sep=0,outer sep=0] at (5, 4) {$12 \quad (v_1, v_3, v_4, v_2) \quad 10$};
+    \node[inner sep=0,outer sep=0] at (5, 3) {$13 \quad (v_3, v_1, v_4, v_2) \quad 10$};
+    \node[inner sep=0,outer sep=0] at (5, 2) {$14 \quad (v_4, v_1, v_3, v_2) \quad 10$};
+    \node[inner sep=0,outer sep=0] at (5, 1) {$15 \quad (v_1, v_4, v_3, v_2) \quad 10$};
+
+    \node[inner sep=0,outer sep=0] at (10, 8) {$16 \quad
+        (\underline{v_3, v_4}, v_1, v_2) \quad \bm{11}$};
+    \node[inner sep=0,outer sep=0] at (10, 7) {$17 \quad
+        (\underline{v_4, v_3}, v_1, v_2) \quad \bm{12}$};
+
+    % skipped
+    \node[inner sep=0,outer sep=0] at (10, 6) {$\color{darkgray}\sout{18 \quad
+        (v_4, v_3, v_2, v_1) \quad 12}$};
+    \node[inner sep=0,outer sep=0] at (10, 5) {$\color{darkgray}\sout{19 \quad
+        (v_3, v_4, v_2, v_1) \quad 12}$};
+    \node[inner sep=0,outer sep=0] at (10, 4) {$\color{darkgray}\sout{20 \quad
+        (v_2, v_4, v_3, v_1) \quad 12}$};
+    \node[inner sep=0,outer sep=0] at (10, 3) {$\color{darkgray}\sout{21 \quad
+        (v_4, v_2, v_3, v_1) \quad 12}$};
+    \node[inner sep=0,outer sep=0] at (10, 2) {$\color{darkgray}\sout{22 \quad
+        (v_3, v_2, v_4, v_1) \quad 12}$};
+    \node[inner sep=0,outer sep=0] at (10, 1) {$\color{darkgray}\sout{23 \quad
+        (v_2, v_3, v_4, v_1) \quad 12}$};
+
+    % separators
+    \draw (2.6, 8.2) -- (2.6, 0.8);
+    \draw (7.6, 8.2) -- (7.6, 0.8);
+\end{tikzpicture}

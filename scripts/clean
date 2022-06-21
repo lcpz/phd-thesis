@@ -1,0 +1,5 @@
+#!/bin/sh
+
+rm -fr *.aux *.lof *.lom *.log *.lot *.loa *.fls *.out *.toc *.fmt *.fot *.cb *.cb2 \
+    .*.lb *.bbl *.bcf *.blg *-blx* *.run* *.fdb_* latexmk* *.synctex* *.pdfsync \
+    sections/*.aux

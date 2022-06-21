@@ -1,0 +1,35 @@
+# Core latex/pdflatex auxiliary files:
+*.aux
+*.lof
+*.log
+*.lot
+*.fls
+*.out
+*.toc
+*.fmt
+*.fot
+*.cb
+*.cb2
+.*.lb
+*.loa
+
+# Intermediate documents:
+*.dvi
+*.xdv
+*-converted-to.*
+*.bak
+
+# Bibliography auxiliary files:
+*.bbl
+*.bcf
+*.blg
+*-blx*
+*.run*
+
+# Build tool auxiliary files:
+*.fdb_*
+latexmk*
+*.synctex*
+*.pdfsync
+
+*.pdf

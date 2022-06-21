@@ -1,0 +1,164 @@
+\chapter*{Conclusions}\label{chap:conclusions}
+\addcontentsline{toc}{chapter}{Conclusions}
+
+In Chapter \ref{chap:contrib1}, we proposed two novel algorithms to solve the CFSTP. The
+first is CFLA2, an improved version of CFLA, and the second is CTS, which is the first to
+be simultaneously anytime, efficient and with convergence guarantee. CFLA2 can replace
+CFLA in solving static or small-scale problems, while CTS provides a baseline for
+benchmarks with dynamic and large-scale problems. Moreover, we showed how a simplified but
+parallel and faster variant of CTS is enough to compete with high-performance algorithms
+such as BinaryMS and DSA in the RCRS. Because it significantly outperforms CFLA, and is
+more applicable than CFLA2, we can consider CTS to be the new state-of-the-art CFSTP
+algorithm.
+Thanks to its features (Section \ref{sec:nova}), CTS can also be used in contexts other
+than disaster response, but which can be still characterised by the CFSTP model, such as
+multi-robot area coverage, or exploration of environments that are dangerous for humans
+\cite[Section $8$]{ramchurn2010cfstp}.
+
+Chapter \ref{chap:contrib2} has focused on eliminating the major gaps in the CFSTP
+literature. Specifically, we gave a novel mathematical programming formulation, which is
+significantly shorter than the original (Section \ref{sec:mip}).
+Then, by reducing the CFSTP to a DynDCOP, we designed D-CTS, the first distributed version
+of CTS. Lastly, using real-world and open data provided by the LFB, and a large-scale
+test framework, we compared D-CTS with DSA-SDP, a state-of-the-art distributed algorithm.
+In situations where the number of agents monotonically decreases over time, D-CTS has
+slightly better median performance, as well as significantly lower communication overhead
+and time complexity.
+D-CTS sets the first large-scale, dynamic and distributed CFSTP benchmark.
+
+Finally, in Chapter \ref{chap:contrib3}, to meet all our research objectives (Section
+\ref{sec:objectives}), we defined the MARSC, a generalisation of both the CFSTP and the
+TOPTW that can be used in real-time domains. Moreover, we proposed ANT, the first
+anytime, exact and parallel MARSC algorithm, as well as an approximate variant called
+ANT-$\varepsilon$. ANT is also the first exact algorithm for the CFSTP.
+Using extended versions of the test frameworks of Chapters \ref{chap:contrib1} and
+\ref{chap:contrib2}, we showed that ANT can solve problems with $2$ agents and up to $40$
+tasks in less than $25$ minutes, while ANT-$\varepsilon$ can solve problems with $150$
+agents and up to $3000$ tasks in at most $8.87$ seconds.
+ANT can be used in applications where optimal solutions are required and time is not a
+limiting factor, such as industrial scheduling and timetabling problems \cite{petcu2005},
+or routing protocols for static sensor networks \cite{kho2009}.
+On the other hand, ANT-$\varepsilon$ can be used in large-scale and dynamic environments
+where it is important to minimise communication overhead \cite{chapman2011,ponda2015}.
+
+\section*{Main Limitations of Our Work}
+\addcontentsline{toc}{section}{Main Limitations of Our Work}
+
+We cannot define the quality of the approximation obtained by (D-)CTS in general settings
+(Section \ref{sec:nova}). Moreover, the fact that it maximises the working time of agents
+(Section \ref{sec:tests}) implies that some agents may take longer to complete some tasks
+and therefore may not work on others. Thus, if an optimal solution exists, (D-)CTS is not
+guaranteed to find it.
+
+Although it generalises the CFSTP and the TOPTW with important constraints and a more
+expressive objective function, the MARSC assumes that the agents have total knowledge, and
+that the environment has a deterministic behaviour (Section \ref{sec:dcop0}).
+In real-world domains, the status of the tasks may be partially known or unknown, while
+exogenous events, such as unexpected failures or severe weather conditions, may reduce the
+ability of agents to perform them. Thus, agents have to balance the \emph{exploration} of
+the environment with the \emph{exploitation} of the information acquired
+\cite{taylor2010,taylor2011}.
+
+The performance of ANT depends primarily on the order in which the schedules are
+investigated (line $4$ in Algorithm \ref{algo:ant}). For example, if in Figure
+\ref{fig:ant-ex} we had investigated $(v_3, v_4, v_1, v_2)$ and $(v_4, v_3, v_1, v_2)$ at
+iterations $10$ and $11$, respectively, then we would have skipped the last $12$ schedules
+($50\%$ of the total), thus minimising the number of iterations required.
+Moreover, although ANT-$\varepsilon$ is an approximate variant, it is not clear what the
+relationship is between the value of $\varepsilon$ and the quality of the solutions
+obtained.
+
+\section*{Possible Future Work}
+\addcontentsline{toc}{section}{Possible Future Work}
+
+In its current state, the field of multi-agent optimisation is very much focused on
+academic testbeds, and little on real-world scenarios \cite{dignum2020,zivan2021opt}. In
+particular, research on DCOPs is mostly concerned with creating effective algorithms for
+solving well-known benchmark problems\footnote{For example, those generated with the
+FRODO framework \cite[Section $9.4.2$]{fioretto2018survey}.}, which do not
+necessarily reflect realistic situations. Consequently, possible future work should not
+only seek to mitigate the above limitations, but also do so with the aim of overcoming the
+current stagnation in the DCOP research community.
+
+A first objective is to extend our LFB test framework (Section \ref{sec:dcts-tests}) by:
+\begin{enumerate}
+    \item Adding other state-of-the-art distributed algorithms as baselines, such as DALO
+        \cite{kiekintveld2010}, Bounded FMS \cite{macarthur2010}, SBDO \cite{billiau2012},
+        GDBA \cite{okamoto2016}, D-Gibbs \cite{nguyen2019}, and FMC\_TA
+        \cite{nelke2020,tkach2021};
+    \item Developing more realistic coalition value distributions, perhaps by extending
+        the ones identified in \cite[Section $5.1$]{changder2021};
+    \item Also studying \emph{exploration} scenarios \cite{fioretto2018survey}, that is,
+        designing tests in which tasks are gradually added to the system;
+    \item Defining a travel time function suitable for ground vehicles. More
+        precisely, the current definition of $\rho(\cdot)$ is based on the shortest
+        distance between two points on the surface of a sphere (Section \ref{sec:setup}).
+        This is only suitable for multi-UAV systems flying high enough not to have to
+        avoid collisions. However, already with such a simple function, D-CTS is one order
+        of magnitude more efficient than DSA-SDP (Section \ref{sec:rres}). Consequently,
+        it would be worth studying how the results change with a function that considers
+        more realistic factors, such as terrain type or road congestion.
+\end{enumerate}
+The concept of $k$-optimality \cite{service2011, farinelli2013dcop} could be used to
+design extensions of D-CTS and ANT-$\varepsilon$ with provable bounds on solution quality.
+Moreover, given its advantages (Section \ref{sec:dcts}) and the scarcity of incomplete
+DynDCOP algorithms (Section \ref{sec:lit-dyndcop}), another important objective is to
+create a D-CTS variant able to solve general DynDCOPs.
+
+The nascent paradigm of enhancing multi-agent optimisation with machine learning has
+already proved capable of improving the performance of VRP algorithms considerably
+\cite{bai2021}. Motivated by this, we could use Q-learning to create a more effective
+method for investigating schedules in ANT, and combine it with a CUDA implementation to
+establish trade-offs between computational power and problem size.
+This improved version of ANT could be validated against general meta-heuristics
+that are also based on permutations of problem elements, such as Squeaky Wheel
+Optimisation \cite{joslin1999}.
+Since the MARSC generalises the TOPTW (Theorem \ref{teo:toptw-gen}), we could evaluate a
+simplified version of ANT in well-established TOPTW benchmarks. To the best of our
+knowledge, despite being the most studied vehicle routing problem \cite{top2019}, so far
+only $4$ exact TOPTW algorithms have been proposed
+\cite{boussier2007,tae2015,el-hajj2015,gedik2017}. Hence, it would be interesting to
+compare ANT with these algorithms.
+\iffalse
+\cite{boussier2007,tae2015} use a branch-and-price method;
+\cite{el-hajj2015} is based on column generation and dynamic programming, and
+\cite{gedik2017} uses constraint programming.
+Since ANT accumulates information about smaller subproblems (optimality of
+$k$-permutations of tasks) to solve larger problems (MARSC instances), it can be
+considered a dynamic programming algorithm \cite[Chapter $15$]{cormen2009}.
+\fi
+Moreover, given that the MARSC is related to the CSG problem, which remains central to
+numerous multi-agent applications, following contributions like
+\cite{agarwal2015,svensson2013,ueda2010}, ANT could also be adapted as a new anytime,
+parallel and exact CSG algorithm.
+
+Finally, to capture problems where agents have limited perception, communication is
+imperfect or noisy, and the environment behaviour is stochastic (e.g., the location and
+severity of the fires are unknown, thus agents must scout the disaster area to find them),
+we could extend the reduction of the MARSC to a DynDCOP given in Section
+\ref{sec:reduction2} with elements of autonomic communications theory
+\cite{dobson2006survey} and Probabilistic DCOPs \cite[Section $6$]{fioretto2018survey}. To
+the best of our knowledge, this would result in the first DCOP model to cope with both
+dynamic and stochastic environments \cite[Section $9.1$]{fioretto2018survey}.
+
+\iffalse
+Some examples of interesting MARSC subproblems:
+   - Allocate at most n agents to task v by deadline d_vn (task capacity constraints).
+   - Agents prioritizes the execution of some tasks before others (task ordering also from
+     the agents' POW).
+   - Synchronisation constraints on task execution.
+   - Task types.
+   - Parallel machine scheduling for multi-agent task allocation (Macarthur et al., 2011).
+   - Restriction of the MARSC in which the distances between locations form a metric
+     that satisfies the triangle inequality (e.g., A->B is no farther than A->C->B). See
+     Metric TSP for inspiration.
+   - Considering aspects of task quality and workload balancing, that is, situations in
+     which tasks can be executed with different levels of "perfection", and situations in
+     which the workload must be distributed among agents according to some metric or
+     property (e.g., fair share).
+   - Considering capacitated aspects (see TOP literature).
+   - Applying the results to TSP, which is a subproblem.
+   - Applying the results to Tramp ship routing and scheduling optimisation.
+   - Applying the results to the Paper Matching problem to improve the Toronto Paper
+     Matching System.
+\fi

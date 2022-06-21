@@ -1,0 +1,756 @@
+\chapter{The Multi-Agent Routing and Scheduling through Coalition Formation
+Problem}\label{chap:contrib3}
+
+Although many problems similar to the CFSTP have been studied to date (Section
+\ref{chap2:limitations}), no one can meet all our research objectives (Section
+\ref{sec:objectives}). Against this background, in this final chapter we begin by
+presenting in Section \ref{sec:marsc} the \emph{Multi-Agent Routing and Scheduling through
+Coalition formation problem} (MARSC), a generalisation of the CFSTP and the TOPTW that can
+be used in real-time domains. Then, we define in Section \ref{sec:ant} the first anytime,
+exact and parallel MARSC algorithm. Since no exact algorithm has so far been proposed for
+the CFSTP, it is consequently the first of its kind for this problem as well. Finally, in
+Section \ref{sec:marsc-tests}, using extended versions of the test frameworks of Chapters
+\ref{chap:contrib1} and \ref{chap:contrib2}, we evaluate our algorithm on synthetic
+small-scale problems, and an approximate variant on large-scale realistic problems.
+
+\section{Problem Formulation}\label{sec:marsc}
+
+As in Section \ref{sec:cfstp-bip}, we use a BIP formulation. Since the MARSC generalises
+the CFSTP (Theorem \ref{teo:cfstp-gen}),
+we recall and extend the basic definitions and constraints of Sections \ref{sec:defs} $-$
+\ref{sec:cv} and \ref{sec:cfstp-bip}.
+Specifically, we add multiple possible locations per task, benefits, time windows,
+precedences, and define a more general objective function.
+We also show how to extend the work of Section \ref{sec:reduction} to reduce the MARSC to
+a DynDCOP.
+
+\subsection{Basic Definitions}\label{sec:marsc-defs}
+
+Let $V = \{ v_1, \dots, v_m \}$ be a set of $m$ tasks and $A = \{ a_1, \dots, a_n \}$ be a
+set of $n$ agents. Let $L$ be the finite set of all possible task and agent locations.
+Time is denoted by $t \in \mathbb{N}$, starting at $t = 0$, and agents travel or perform
+tasks with a base time unit of $1$. The time units needed by an agent to travel from one
+location to another are given by the function $\rho : A \times L \times L \rightarrow
+\mathbb{N}$. Having $A$ in the domain of $\rho$ allows to characterise different agent
+features (e.g., speed or type). Let $l_a^t \in L$ be the location of agent $a$ at time
+$t$, where $l_a^0$ is the initial location of $a$ and is known a priori.
+
+\paragraph{Task Demand}
+
+Each task $v$ has a \emph{demand} $D_v = (L_v, w_v, \phi_v, \alpha_v, \beta_v, \gamma_v)$,
+where:
+\begin{itemize}
+    \item $L_v \subseteq L$ is the \emph{set of possible locations of} $v$;
+    \item $w_v \in \mathbb{R}_{\geq 0}$ is the \emph{workload} of $v$, or the amount of
+        work required to complete $v$;
+    \item $\phi_v \in \mathbb{R}_{\geq 0}$ is the \emph{benefit} of $v$, or the weight
+        associated with the completion of $v$;
+    \item $\left[ \alpha_v, \beta_v, \gamma_v \right]$ is the \emph{time window} of $v$,
+        such that $\alpha_v \in \mathbb{N}$ is the \emph{earliest time} of $v$, or the
+        time starting from which agents can work on $v$, $\beta_v \in \mathbb{N}$ is the
+        \emph{soft latest time} of $v$, or the time until which agents can work on $v$
+        without incurring in a penalty, and $\gamma_v \in \mathbb{N}$ is the \emph{hard
+        latest time} of $v$, or the time until which agents can work on $v$ incurring in a
+        penalty. No agent can work on $v$ after $\gamma_v$.
+\end{itemize}
+We assume that $\alpha_v \leq \beta_v \leq \gamma_v$, $\forall v \in V$, and call $\tmax
+=$ $\max_{v \in V} \gamma_v$ the \emph{maximum problem time}.
+
+\paragraph{Task Order}\label{sec:ordering}
+
+Let $Prec \subseteq V \times V$ be such that if $(v_1, v_2) \in Prec$ then $v_1$ must be
+completed before $v_2$. Each $(v_1, v_2) \in Prec$ is called a \emph{precedence} and can
+be graphically denoted with $v_1 \prec v_2$. As typically done in MRTA
+\cite{nunes2017taxonomy}, we assume that $G = (V, Prec)$ is a finite, directed and acyclic
+graph. Moreover, without loss of generality, we assume that $Prec$ does not contain
+relations which can be inferred transitively, that is:
+\begin{equation*}
+    (v_1, v_2) \in Prec \land (v_2, v_3) \in Prec \Rightarrow (v_1, v_3) \not\in Prec
+\end{equation*}
+
+\paragraph{Coalition and Coalition Value}\label{sec:marsc-cv}
+
+A subset of agents $C \subseteq A$ is called a \emph{coalition}. For each coalition, task
+and location there is a \emph{coalition value}, given by the function $u : P(A) \times V
+\times L \rightarrow \mathbb{R}_{\geq 0}$, where $P(A)$ is the power set of $A$. The
+value of $u(C, v, l)$ is the amount of work that coalition $C$ does on task $v$ at
+location $l \in L_v$ in one time unit. In other words, when $C$ performs $v$ in $l$,
+$u(C, v, l)$ expresses how well the agents in $C$ work together, and the workload $w_v$
+decreases by $u(C, v, l)$ at each time.
+
+\subsection{Decision Variables}\label{sec:marsc-ca}
+
+We use the following indicator variables:
+\begin{gather}
+    \forall v \in V,\, \forall l \in L_v,\, \forall t \in [\alpha_v,
+    \gamma_v],\,
+    \forall C \subseteq A,\;
+    \mx \in \left\{ 0, 1 \right\}\label{eq:mbip0}\\
+    \forall v \in V,\, \forall l \in L_v,\; y_{v, l} \in \left\{ 0, 1 \right\}\label{eq:mbip0b}
+\end{gather}
+where: $\mx = 1$ if task $v$ in location $l$ and at time $t$ is performed by coalition
+$C$, and $0$ otherwise; $y_{v, l} = 1$ if task $v$ is completed in location $l$, and $0$
+otherwise.
+
+\subsection{Constraints}\label{sec:marsc-constraints}
+
+There are $4$ types of constraints: structural, temporal, spatial and ordering.
+%We formalise each below.
+
+\paragraph{Structural Constraints}
+
+Each task can be performed by at most one coalition at each time, and only within its time
+window:
+\begin{equation}\label{eq:mbip1}
+    \forall v \in V,\, \forall l \in L_v,\, \forall t \in [\alpha_v, \gamma_v],\;
+    \sum_{C \subseteq A} \mx \leq 1
+\end{equation}
+
+\paragraph{Temporal Constraints}
+
+Each task can be performed in at most one location, and no agent can work on it after its
+workload has been completed:
+\begin{gather}
+    \forall v \in V,\; \sum_{l \in L_v} y_{v, l} \leq 1\label{eq:mbip2a}\\
+    \forall v \in V,\, \forall l \in L_v,\;
+    \left\lceil \sum_{t \in [\alpha_v, \gamma_v]}\, \sum_{C \subseteq A} u(C, v, l)
+    \cdot \mx \right\rceil
+    = \left\lceil w_v \cdot y_{v, l} \right\rceil\label{eq:mbip2b}
+\end{gather}
+
+\paragraph{Spatial Constraints}
+
+An agent cannot work on a task before reaching one of its possible locations. This
+identifies two cases: when an agent reaches a task location from its initial location, and
+when an agent moves from one task location to another. The first case imposes that, for
+each task $v$, location $l \in L_v$ and coalition $C$, the decision variable $\mx$ can be
+positive only if all agents in $C$ can reach $l$ at time $t' < t$:
+\begin{equation}\label{eq:mbip3}
+    \forall v \in V,\, \forall l \in L_v,\, \forall C \subseteq A,\,
+    \text{if } \hat{\rho} = \max_{a \in C} \rho(a, l_a^0, l) \geq \alpha_v
+    \text{ then }
+    \sum_{t \in [\alpha_v, \hat{\rho}]}\, \mx = 0
+\end{equation}
+The value of $\hat{\rho}$ is the maximum time at which an agent $a \in C$ reaches $l$,
+from its initial location at time $t = 0$. Conditional constraints are usually formulated
+using auxiliary variables or the Big-M method. However, such approaches further enlarge
+the mathematical program or easily cause numerical issues (Section \ref{sec:cfstp-gaps}).
+Consequently, in the preprocessing step necessary to create our BIP, we can implement
+Equation \ref{eq:mbip3} simply by excluding the variables that must be equal to $0$.
+%That is, if $\hat{\rho} \leq \gamma_v$, we only declare the following variables: $\{ \mx
+%\}_{t \in [\hat{\rho} + 1, \gamma_v]}$.
+The second case requires that if an agent cannot perform two tasks consecutively, then it
+can perform at most one:
+\begin{equation}\label{eq:mbip4}
+    \begin{gathered}
+    \forall C_1, C_2 \subseteq A : C_1 \cap C_2 \neq \emptyset,\,
+    \forall v_1, v_2 \in V,\, \forall l_1 \in L_{v_1},\, \forall l_2 \in L_{v_2},\\
+    \forall t_1 \in [\alpha_1, \gamma_1],\, \forall t_2 \in [\alpha_2, \gamma_2] :
+    t_1 + \max_{a \in C_1 \cap C_2} \rho(a, l_1, l_2) \geq t_2,\\
+    x_{v_1,\, l_1,\, t_1, C_1} + x_{v_2,\, l_2,\, t_2, C_2} \leq 1
+    \end{gathered}
+\end{equation}
+Hence, coalition $C_2$ can perform task $v_2$ only if all agents in $C_1 \cap C_2$ can
+reach location $l_2$ by the hard latest time $\gamma_2$. Equation \ref{eq:mbip4} also
+implies that two tasks cannot be performed by the same agent at the same time.
+Consequently, coalitions that exist in different locations at the same time are disjoint.
+There are no synchronisation constraints \cite{nunes2017taxonomy}. Thus, when a task $v$
+in location $l$ is allocated to a coalition $C$, each agent $a \in C$ starts working on
+$v$ as soon as it reaches $l$, without waiting for the remaining agents. That is, $v$ is
+completed by a temporal sequence of subcoalitions of $C$: $\exists S \subseteq P(C)$ such
+that $\forall C' \in S$, $\exists t \in [\alpha_v, \gamma_v]$, $x_{v,\, l,\, t,\, C'} =
+1$, where $P(C)$ is the power set of $C$.
+
+\paragraph{Ordering Constraints}
+
+If $v_1 \prec v_2$ then $v_2$ can only be performed after $v_1$:
+\begin{equation}\label{eq:mbip5}
+    \forall v_1, v_2 \in V,\, \text{if } v_1 \prec v_2 \text{ then }
+    \sum_{l_1 \in L_{v_1}} y_{v_1, l_1} \geq \sum_{l_2 \in L_{v_2}} y_{v_2, l_2}
+\end{equation}
+
+\subsection{Objective Function}\label{sec:ofmarsc}
+
+Let $\bm{x}$ be a \emph{solution}, that is, a value assignment to all decision variables,
+which defines the route and schedule of each agent. For each task $v$ and time $t$, let:
+\begin{equation}\label{eq:penalty}
+\psi_{v, t} =
+\begin{cases}
+    1, & \quad\text{if } t \leq \beta_v\\
+    1 - \dfrac{t - \beta_v}{\gamma_v - \beta_v + 1}, & \text{ otherwise}
+\end{cases}
+\end{equation}
+be the \emph{penalty} of performing $v$ at $t$, that is, a positive weight that decreases
+linearly after $t$ passes $\beta_v$. Let:
+\begin{equation}\label{eq:score}
+    score(\bm{x}) =
+    \sum_{v \in V}\, \sum_{l \in L_v}\, \sum_{t \in [\alpha_v, \gamma_v]}\,
+    \sum_{C \subseteq A}\, \phi_v \cdot \psi_{v, t} \cdot \mx
+\end{equation}
+be the \emph{score} of $\bm{x}$.
+The objective of the MARSC is to find a solution that has maximum score and satisfies all
+constraints:
+\begin{equation}\label{eq:mbip}
+    \arg \max_{\bm{x}} score(\bm{x})
+    \text{ subject to Equations \ref{eq:mbip0} $-$ \ref{eq:mbip5}}
+\end{equation}
+Hence, Equation \ref{eq:mbip} maximises the total benefit while minimising the total time
+penalty (i.e., the number of tasks that are completed after their soft latest times).
+This involves maximising task completion times and minimising coalition sizes.
+Consequently, the number of tasks performed at any one time is the largest, and the most
+beneficial tasks are prioritised. Ours is a combination of two objective functions
+commonly used in MRTA problems \cite[Section $5$]{nunes2017taxonomy}.
+Creating all decision variables (Equation \ref{eq:mbip0}) may require to list all
+$\mathcal{L}$-tuples over $P(A)$, where $\mathcal{L} = |V| \cdot |L| \cdot
+\tmax$. This implies a worst-case time and space complexity of:
+\begin{equation}\label{eq:mccc}
+    O\left( {\left(2^{|A|}\right)}^{\mathcal{L}} \right) =
+    O\left( 2^{|A| \cdot |V| \cdot |L| \cdot \tmax} \right)
+\end{equation}
+In addition, searching for an optimal solution exhaustively (Equation \ref{eq:mbip}) may
+require to list all possible coalition allocations for each possible permutation of $V$,
+with a worst-case time complexity of:
+\begin{equation}\label{eq:mcomp}
+    O \left( |V|! \cdot |L| \cdot 2^{|A|} \cdot \tmax \right)
+\end{equation}
+
+\begin{theorem}\label{teo:cfstp-gen}
+    The MARSC generalises the CFSTP.
+\end{theorem}
+\begin{proof}
+We refer to the BIP formulation of the CFSTP given in Section \ref{sec:cfstp-bip}.
+
+The CFSTP is a MARSC where tasks have exactly one location, benefits are homogeneous,
+there are neither earliest nor soft latest times, and tasks can be completed in any order.
+The structural, temporal and spatial constraints are identical. Given a MARSC solution
+$\bm{x}$ and a task $v$, if $\mx = 1$, for some $l \in L_v$, $t \in [\alpha_v, \gamma_v]$
+and $C \in P(A)$, then $y_{v, l} = 1$. Thus, in the presence of the above-mentioned
+simplifications, Equation \ref{eq:mbip} maximises the number of completed tasks, as
+required by the objective function of the CFSTP (Equation \ref{eq:bip}).
+\end{proof}
+
+\begin{theorem}\label{teo:toptw-gen}
+    The MARSC generalises the TOPTW.
+\end{theorem}
+\begin{proof}
+Based on \cite[Section $3.3$]{top2019}, we first describe the TOPTW using our terminology
+(Section \ref{sec:marsc-defs}), then we show that it is a special case of the MARSC.
+
+The TOPTW considers a finite set of tasks, each with a non-negative benefit. Each task has
+exactly one location and no soft latest time: $|L_v| = 1 \,\land\, \beta_v = \gamma_v$,
+$\forall v \in V$. When a task is completed within its time window, its benefit is added
+to the total benefit. Between each pair of tasks there is a fixed travel time. There are
+an initial task and a final task, both with a benefit of $0$, an earliest time of $0$ and
+a soft latest time of $\tmax$. Each route must begin at the location of the initial task
+and end at the location of the final task. The objective is to determine $n$ routes, one
+for each agent, that maximise the total benefit.
+
+The travel time between tasks $v_i$ and $v_j$ also includes the \emph{service time} at
+$v_j$, that is, the time taken by any coalition to complete $v_j$ \cite[Section
+$2.2$]{top2019}. Hence, we set $w_v = 1$, $\forall v \in V$, to ensure that each task is
+completed in at most $1$ unit of time. Since travel times depend only on task locations,
+we exclude $A$ from the domain of $\rho(\cdot)$. Coalitions are singleton, that is, each
+$C$ is such that $|C| = 1$. The coalition value function $u(\cdot)$ always returns $1$.
+
+Because each task has exactly one location and coalitions are singleton, we remove the
+subscript $l$ from the decision variables and simply use $a$ instead of $C$ to indicate
+the coalition that consists of agent $a$. Hence: $x_{v,\, t,\, a} = 1$ if agent $a$ works
+on task $v$ at time $t$, and $0$ otherwise; $y_v = 1$ if task $v$ is completed, and $0$
+otherwise. Let $v_{start}$ and $v_{end}$ denote the initial and final tasks, respectively.
+The structural constraints (Equation \ref{eq:mbip1}) become:
+\begin{equation}
+    \forall v \in V \setminus \left\{ v_{start}, v_{end} \right\},\,
+    \forall t \in [\alpha_v, \beta_v],\;
+    \sum_{a \in A} x_{v,\, t,\, a} \leq 1\label{eq:tops}
+\end{equation}
+Since both coalition values and workloads are unitary, and each task does not have
+multiple locations, Equation \ref{eq:tops} already ensures that a task is completed within
+its time window by at most one agent. Hence, no temporal constraints (Equations
+\ref{eq:mbip2a} and \ref{eq:mbip2b}) are required.
+
+Let $l_{start}$ denote the location of $v_{start}$, and let $l_v$ denote the location of
+any other task $v$. The initial location of each agent is $l_{start}$, and the spatial
+constraints (Equations \ref{eq:mbip3} and \ref{eq:mbip4}) become:
+\begin{equation}
+    \forall v \in V,\, \forall a \in A,\,
+    \text{if } \lambda = \rho(l_{start}, l_v) \geq \alpha_v \text{ then }
+    \sum_{t \in [\alpha_v, \lambda]} x_{v,\, t,\, a} = 0
+\end{equation}
+\begin{equation}
+\begin{gathered}
+    \forall v_1, v_2 \in V,\, \forall a \in A,\,
+    \forall t_1 \in [\alpha_1, \beta_1],\, \forall t_2 \in [\alpha_2, \beta_2]
+    : t_1 + \rho(l_{v_1}, l_{v_2}) \geq t_2,\\
+    x_{v_1,\, t_1,\, a} + x_{v_2,\, t_2,\, a} \leq 1
+\end{gathered}
+\end{equation}
+To ensure that each agent schedule starts with $v_{start}$ and ends with $v_{end}$, we
+define the set of precedences as follows:
+\begin{equation*}
+    Prec = \left\{ (v_{start}, v), (v, v_{end}) : v \in V \setminus \left\{ v_{start},
+    v_{end} \right\} \right\}
+\end{equation*}
+The ordering constraints (Equation \ref{eq:mbip5}) become:
+\begin{equation}
+    \forall v_1, v_2 \in V,\, \text{if } v_1 \prec v_2 \text{ then }
+    y_{v_1} \geq y_{v_2}\label{eq:topf}
+\end{equation}
+The absence of soft latest times means that there can be no time penalties: $\psi_{v,t} =
+1$, $\forall v \in V$, $\forall t \leq \tmax$ (Equation \ref{eq:penalty}). Hence, the
+objective function (Equation \ref{eq:mbip}) is simplified as follows:
+\begin{equation}
+    \begin{gathered}
+    \arg \max_{\bm{x}} \sum_{v \in V \setminus \{v_{start}, v_{end}\}}\,
+    \sum_{t \in [\alpha_v, \beta_v]}\,
+    \sum_{a \in A} \phi_v \cdot x_{v,\, t,\, a}\\
+    \text{subject to Equations \ref{eq:tops} $-$ \ref{eq:topf}}
+    \end{gathered}
+    \label{eq:topof}
+\end{equation}
+\end{proof}
+
+Both the CFSTP and the TOPTW are NP-hard \cite{ramchurn2010cfstp,top2019}, thus the MARSC
+is NP-hard as well.
+%\clearpage
+
+\subsection{Reduction of the MARSC to a DynDCOP}\label{sec:reduction2}
+
+Given that the MARSC generalises the CFSTP (Theorem \ref{teo:cfstp-gen}), to reduce it to
+a DynDCOP, there are two modifications to be made to the work of Section
+\ref{sec:reduction}.
+
+Let $V^t_{completed}$ denote the set of tasks that have been completed at time $t$. The
+first modification is to include ordering constraints and the possibility of having
+multiple possible locations per task by redefining Equation \ref{eq:dyndcop-d} as follows:
+\begin{equation}
+    \begin{gathered}
+    D_i^t = \big\{
+        v \in V^t_{allocable} \,|
+        \left(\exists v_2 \in V : v_2 \prec v \Rightarrow v_2 \in V^t_{completed} \right)
+        \;\land\\ \exists l \in L_v : t + \rho(a_i^t, l_{a_i^t}, l) \leq \gamma_v \big\}
+        \cup \left\{ \varnothing \right\}
+    \end{gathered}
+\end{equation}
+Recall that, in propositional logic, $A \Rightarrow B \equiv \neg A \lor B \equiv
+\text{if } A \text{ then } B$.
+The second change is to include time windows, benefits and penalties by redefining
+Equation \ref{eq:costs} as follows:
+\begin{equation}\label{eq:costs2}
+    f_i^t(d_{i_1}, \dots, d_{i_{h_i}}) = \min_{\bm{x}_i^t}\, - score(\bm{x}_i^t)
+\end{equation}
+where each $x_{v_i,\, l,\, t,\, C} \in \bm{x}_i^t$ is such that $C$ is a subset of the
+agents that control the variables in the scope of $f_i^t$, while $x_{v_i,\, l,\, t,\, C} =
+1$ if $d_{i_{h_i}} = v_i$, for each $h_i$-th agent in $C$ and for some $l \in L_{v_i}$,
+and $0$ otherwise.
+Being an additive function (Equation \ref{eq:score}), the solution score fits naturally
+with the characterisation of $f_i^t(\cdot)$. It is multiplied by $-1$ in Equation
+\ref{eq:costs2} because we formulate the DynDCOP as a minimisation problem (Equation
+\ref{eq:dcop}).
+
+\section{An Anytime, Exact and Parallel MARSC Algorithm}\label{sec:ant}
+
+A trivial way to solve the MARSC would be to implement Equation \ref{eq:mbip} with solvers
+such as CPLEX or GLPK. Although this would guarantee anytime and optimal solutions, it
+would also take exponential time and space to create the BIP (Equation \ref{eq:mccc}), in
+addition to the time to solve it (Equation \ref{eq:mcomp}). This limits this practice to
+offline contexts and very small problems. For example, using CPLEX $20.1$ with our HPC
+cluster\footnote{\href{https://www.southampton.ac.uk/isolutions/staff/iridis.page}{The
+Iridis $5$ Compute Cluster at the University of Southampton}.}, we can solve within hours
+problems with superadditive coalition values, uniformly distributed workloads and time
+windows, locations based on the taxicab metric, and $dim = |A|\cdot|V|\cdot|L| \leq 30$.
+With greater $dim$ values, CPLEX depletes all memory ($187.5$ GB) and crashes. For this
+reason, this section presents the \emph{Anytime, exact and parallel Node Traversal} (ANT)
+algorithm, which provides the sharp lower bound on the time and space complexity required
+to solve the MARSC optimally. We begin by explaining its procedures, then we analyse its
+theoretical properties and computational complexity.
+%\clearpage
+
+\subsection{Procedures}\label{sec:procedures}
+
+\begin{algorithm}[t]
+    \DontPrintSemicolon
+    \KwIn{task $v$, location $l \in L_v$, agents $A'$}
+    $\Pi_v \gets$ array of all agents in $A'$ that, from their current \textsf{status},
+    can reach $l$ by $\gamma_v$\;
+    Sort $\Pi_v$ by arrival time to $l$\;
+    $\varphi_v \gets 0$ \Comment{\small total workload done on $v$}
+    \For{$i \gets 1$; $i \leq |\Pi_v|$; $i \gets i + 1$}{
+        $C^\ast \gets$ first $i$ agents in $\Pi_v$\;
+        $\lambda_i \gets$ arrival time to $l$ of the $i$-th agent in $\Pi_v$\;
+        \eIf{$i + 1 \leq |\Pi_v|$}{
+            $\lambda_{i+1} \gets$ arrival time to $l$ of the $(i+1)$-th agent in
+            $\Pi_v$\;
+        }(\Comment*[h]{\small the $i$-th agent is the last}){
+            $\lambda_{i+1} \gets \gamma_v$ \Comment{\small last feasible working time}
+        }
+        $\varphi_v \gets \varphi_v + (\lambda_{i+1} - \lambda_i) \cdot u(C^\ast,
+        v, l)$ \Comment{\small workload done at time $\lambda_{i+1}$}
+        \If{$(\gamma_v - \lambda_{i+1}) \cdot u(C^\ast, v, l) \geq w_v -
+            \varphi_v$}{
+            \Return $\bm{x}_v$ \Comment{\small using $C^\ast$, $v$, and $l$}
+        }
+    }
+    \Return \textsc{nil}\;
+    \caption{\textsf{getSingletonSolution}\label{algo:getSingletonSolution}}
+\end{algorithm}
+
+\begin{algorithm}[t]
+    \DontPrintSemicolon
+    \KwIn{incumbent solution $\bm{x}$, task permutation $V^\alpha$, agents $A'$}
+    $\bm{x}^\alpha \gets$ empty vector\;
+    \For{$v \in V^\alpha$}{
+        $\bm{x}_v^\alpha \gets$ \textsc{nil}\;
+        \For{$l \in L_v$}{
+            $\bm{x}_{v,l}^\alpha \gets$ \textsf{getSingletonSolution($v$, $l$, $A'$)}\;
+            $\bm{x}_v^\alpha \gets \arg \max_{\bm{x}' \in \{\bm{x}_{v,l}^\alpha,
+            \bm{x}_v^\alpha\}}
+            score(\bm{x}')$\;
+        }
+        \If{$\bm{x}_v^\alpha \neq$ \normalfont{\textsc{nil}}}{
+            $\forall a \in A'$, update $a$\textsf{.status} based on $\bm{x}_v^\alpha$\;
+        }
+    }
+
+    \Return $\arg \max_{\bm{x}' \in \{\bm{x}^\alpha,
+    \bm{x}\}} score(\bm{x'})$ \Comment{\small access to $\bm{x}$ is synchronised}
+    \caption{\textsf{getSolutionForSchedule}\label{algo:getSolutionForSchedule}}
+\end{algorithm}
+
+Given a task $v$, a location $l \in L_v$ and a set of agents $A' \subseteq A$, Algorithm
+\ref{algo:getSingletonSolution} defines a coalition $C^\ast \subseteq P(A')$ such that
+$|C^\ast|$ is minimum and each agent $a \in C^\ast$ reaches $l$ not only by $\gamma_v$
+(line $1$), but also in the shortest possible time (line $2$), which satisfies the spatial
+constraints. The \textsf{status} of each agent (line $1$) is set by Algorithm
+\ref{algo:getSolutionForSchedule}. When the condition at line $12$ holds, $C^\ast$
+satisfies the temporal constraints. Line $13$ returns a singleton solution $\bm{x}_v
+\subseteq \bm{x}$ (Section \ref{sec:reduction}). In particular, $\bm{x}_v$ defines the
+temporal sequence of subcoalitions of $C^\ast$ that are formed as the agents reach $l$,
+thus satisfying the structural constraints.
+That is, for each $a \in C^\ast$, $\bm{x}_v$ defines the time interval $i$ during which
+$a$ will work on $v$ at $l$, such that $i$ does not violate any constraints, and
+$score(\bm{x}_v)$ is maximum; $a$ is considered part of $C^\ast$ from the moment
+$\bm{x}_v$ is created until the end of $i$.
+
+Let $\sigma(V)$ denote the set of all permutations of $V$. Algorithm
+\ref{algo:getSolutionForSchedule} takes as input a task permutation $V^\alpha \subseteq
+\sigma(V)$ and a set of agents $A' \subseteq A$. It defines a solution $\bm{x}^\alpha$ by
+finding singleton solutions following the order of $V^\alpha$. For each $v \in V^\alpha$,
+the loop at line $4$ finds a location $l \in L_v$ that maximises $score(\bm{x}_v^\alpha)$,
+with the convention that $score(\text{\textsc{nil}}) = 0$.
+Lines $7$ and $8$ ensure that $\bm{x}^\alpha$ satisfies the structural constraints by
+saving, after finding each singleton solution and for each agent $a \in A'$, the last time
+$a$ was working, and at which location (i.e., its \textsf{status}).
+%This information is used by Algorithm \ref{algo:getSingletonSolution} to define $\Pi_v$.
+At line $9$, $\bm{x}$ is maximised synchronously to allow execution in concurrent
+environments.
+
+\begin{algorithm}[t]
+    \DontPrintSemicolon
+    \KwIn{tasks $V$, demands $\{D_v\}_{v \in V}$, order $Prec$, agents $A$}
+    $\bm{x} \gets$ empty vector\;
+    Sort $V$ by earliest time, while satisfying the ordering constraints
+    \Comment{\small initial schedule}
+    $\bm{x} \gets$ \textsf{getSolutionForSchedule($\bm{x}$, $V$, $\text{clone}(A)$)}
+    \Comment{\small initial incumbent solution}
+    \For(\Comment*[h]{\small remaining schedules}){$V^\alpha \in \sigma(V)$}{
+        \If{$V^\alpha$ \textnormal{satisfies the ordering constraints}}{
+            $\bm{x} \gets$ \textsf{getSolutionForSchedule($\bm{x}$, $V^\alpha$,
+            $\text{clone}(A)$)}\;
+            \If{$\exists k \leq |V| : \nexists$ \textnormal{solutions for} $k$
+                \textnormal{tasks in} $\bm{x}$}{
+                \Break
+            }
+        }
+    }
+    \Return $\bm{x}$\;
+    \caption{ANT\label{algo:ant}}
+\end{algorithm}
+
+Algorithm \ref{algo:ant} describes the overall procedure. Lines $2$ and $3$ initialise the
+incumbent solution using the \emph{Earliest Deadline First} (EDF) technique, which is
+typically used in real-time systems \cite{stankovic2013edf}. Lines $4 - 6$ launch a thread
+with an instance of Algorithm \ref{algo:getSolutionForSchedule} for each \emph{schedule}
+or permutation of $V$ that satisfies the ordering constraints. At lines $3$ and $6$, $A$
+is cloned to avoid interferences between threads. The stopping criterion at line $7$ works
+as follows. Let $k$ be the number of tasks performed in the solution found at line $6$,
+let $S$ be the set of all schedules investigated so far, and let $\tilde{X}$ be the set of
+all solutions found so far. If for each permutation of $k$ tasks $p$ there is a schedule
+in $S$ that starts with $p$, and $\tilde{X}$ does not contain a solution involving $k$
+tasks, then there can be no solution for $k' \geq k$ tasks. Since $S$ consequently also
+contains schedules starting with each permutation of $k'' < k$ tasks, the search can
+safely end.
+
+The reason why it is sufficient that, for each $k$-permutation of tasks $p$, $S$ contains
+a schedule $s$ \emph{starting} with $p$, is that $s$ has maximum score for subschedule $p$.
+In other words, due to Equation \ref{eq:score}, any schedule $s' \neq s$ containing $p$
+(in any position) is such that $score(s') \leq score(s)$. Figure \ref{fig:ant-ex}
+shows an example of the execution of Algorithm \ref{algo:ant}.
+
+\subsection{Theoretical Properties}\label{sec:ant-properties}
+
+Algorithm \ref{algo:getSingletonSolution} is based on the following lemma.
+\begin{lemma}\label{lemma:1}
+$\forall a \in A$, $\forall v \in V$, $\forall t \in [\alpha_v, \gamma_v]$, if $\rho(a,
+l_a^0, l_v) > t$, then $\nexists v_2 \in V \setminus \{ v \}$ such that:
+\begin{equation}
+    \exists l_{v_2} \in L_{v_2},\, \exists t_2 \in [\alpha_{v_2},
+    \gamma_{v_2}] : t_2 + \rho(a, l_{v_2}, l_v) \leq t
+\end{equation}
+\end{lemma}
+\begin{proof}
+If agent $a$ cannot reach location $l_v$ from its initial location $l_a^0$ by time
+$t$, then it cannot reach $l_v$ by $t$ even if it would depart from any other location
+at time $t' < t$, because each possible route of $a$ always starts at $l_a^0$.
+\end{proof}
+Hence, if $\rho(a, l_a^0, l_v) > t$, then we can safely exclude each decision variable
+$\mx$ such that $a \in C$. This means that only agents that can reach $l_v$ by $\gamma_v$
+are able to form feasible coalitions, and only coalitions that can be formed while agents
+reach $l_v$ can maximise $score(\bm{x}_v)$, as demonstrated by the following lemma.
+\begin{lemma}\label{lemma:2}
+    For the input subproblem, Algorithm \ref{algo:getSingletonSolution} is guaranteed to
+    converge to an optimal singleton solution.
+\end{lemma}
+\begin{proof}
+Algorithm \ref{algo:getSingletonSolution} finds a coalition of minimum size $C^\ast$ that
+reaches $l$ as fast as possible. This maximises the working time of the agents in
+$C^\ast$, that is, the number of positive decision variables, and therefore also the score
+(Equation \ref{eq:score}).
+\end{proof}
+\begin{corollary}\label{cor:1}
+    For the input schedule, Algorithm \ref{algo:getSolutionForSchedule} is guaranteed to
+    converge to an optimal solution.
+\end{corollary}
+Hence, if we were to perform the tasks according to a given order $V^\alpha$, Algorithm
+\ref{algo:getSolutionForSchedule} would find a solution $\bm{x}^\alpha$ with maximum
+score, in particular due to lines $4 - 6$ (Section \ref{sec:procedures}). The previous
+results lead to the following theorem.
+\begin{theorem}\label{teo:exactness}
+    Algorithm \ref{algo:ant} is exact.
+\end{theorem}
+\begin{proof}
+Corollary \ref{cor:1} implies that Algorithm \ref{algo:ant} finds an optimal solution to
+each possible schedule (line $5$). Hence, we only need to show that the stopping criterion
+(line $7$) does not exclude schedules that have to be investigated. This follows from the
+discussion in Section \ref{sec:procedures}: if we investigated all schedules involving $k$
+tasks, without finding a solution, then the maximum possible number of completed tasks
+must be less than $k$, thus there is no need to continue.
+\end{proof}
+Lastly, Algorithm \ref{algo:ant} is \emph{pleasingly} parallel \cite[Section
+$2.1$]{kepner2009} because each possible schedule (line $6$) is investigated in an
+independent thread, and anytime since each iteration of the loop at line $4$ updates the
+incumbent solution.
+
+\begin{figure}[t]
+    \centering
+    \begin{adjustbox}{width=.825\textwidth}
+        \input{images/ant-ex}
+    \end{adjustbox}
+    \caption[Illustrative example of the execution of ANT]{%
+        Illustrative example of the execution of Algorithm \ref{algo:ant} on a problem
+        where $V = \{ v_1, v_2, v_3, v_4 \}$, $Prec = \varnothing$, and $\bm{x}_{v_1}$ is
+        the only feasible solution, which is therefore optimal. Each cell of each column
+        is an iteration of the loop at line $4$, except the first cell of the first
+        column, which represents the initial incumbent solution obtained at line $3$. Each
+        cell reports the iteration number, current schedule, and number of schedules
+        starting with distinct $2$-permutations of $V$ investigated so far. The schedules
+        are generated using Heap's method \cite{sedgewick1977}. Let $\bm{x}_{v_1}$ be
+        found at iteration $0$. ANT takes $17$ iterations before ensuring that, for each
+        $2$-permutation of $V$ $p$, at least one schedule starting with $p$ has been
+        investigated. Thus, the last $6$ schedules ($25\%$ of the total) are skipped.}
+    \label{fig:ant-ex}
+\end{figure}
+
+\subsection{Computational Complexity}
+
+Algorithm \ref{algo:getSingletonSolution} requires $O(|A| \log |A|)$ time for the sorting
+at line $2$ \cite{cormen2009}, and $\bar{a} = O(|A| \cdot (\gamma_v - \alpha_v))$ time and
+space to define when each agent $a \in C^\ast$ is working on $v$. Its total time
+complexity is $\bar{b} = O(|A| \log |A| \cdot \tmax)$. Algorithm
+\ref{algo:getSolutionForSchedule} requires $\bar{c} = O(|V| \cdot |L| \cdot \bar{b})$ time
+and $\bar{d} = O(|A| \cdot \tmax)$ space to determine when and where each agent $a \in A$
+works, since each variable $y_{v, l}$ can be stored in constant space (e.g., using a
+fixed-size string).
+
+Algorithm \ref{algo:ant} requires: $O(|V| \log |V|)$ time and $O(|V|)$ space for line $2$;
+$\bar{c}$ time and $\bar{d}$ space for line $3$; $O(|V|!)$ time for the loop at line
+$4$, and $O(|V|)$ time for checking the condition at line $5$. The condition at line $7$
+can be checked in constant time and space using counter variables. Hence, ANT has an
+overall time complexity of:
+\begin{equation}\label{eq:ant-tcomp}
+    O \left( |V| \log |V| + |V|! \cdot \left( |V| + \bar{c} \right) \right)
+    =
+    O \left( |V|! \cdot |L| \cdot |A| \log |A| \cdot \tmax \right)
+\end{equation}
+and an overall space complexity of:
+\begin{equation}\label{eq:ant-scomp}
+    O \left( |V| + (1 + \kappa) \cdot \bar{d} \right) =
+    O \left( |V| + \kappa \cdot |A| \cdot \tmax \right)
+\end{equation}
+where $\kappa$ is the maximum number of threads available. From Lemma \ref{lemma:1} and
+Theorem \ref{teo:exactness}, it follows that no exact MARSC algorithm can have a time and
+space complexity lower than that specified by Equations \ref{eq:ant-tcomp} and
+\ref{eq:ant-scomp}.
+%\clearpage
+
+\section{Empirical Evaluation}\label{sec:marsc-tests}
+
+We wrote a test framework in Java\footnote{\url{https://doi.org/10.5281/zenodo.5375844}}
+consisting of two suites. The first is an extension of Section \ref{sec:tests}, while the
+second is a variant of Section \ref{sec:dcts-tests} with an extended
+dataset\footnote{\url{https://doi.org/10.5281/zenodo.4018139}} of $567492$ task demands
+($+67\%$) generated from LFB records of the last $12$ years. We used the first suite to
+test ANT on small-scale synthetic problems, and the second suite to test an approximate
+variant called ANT-$\varepsilon$ on large-scale realistic problems. This variant simply
+limits to $\varepsilon$ the maximum number of iterations done at line $4$ in Algorithm
+\ref{algo:ant}. We used Heap's method \cite{sedgewick1977} to generate task
+permutations\footnote{In preliminary tests, it proved to be the fastest in finding anytime
+solutions among the methods reported in \cite{sedgewick1977}.} in Algorithm
+\ref{algo:ant}, and set $\varepsilon = 10^5$. As baselines, we used CTS (Section
+\ref{sec:cts}), augmented to solve the MARSC, and EDF\footnote{We use it in place of TOPTW
+algorithms, which ignore coalition formation and real-time domains.}, equivalent to lines
+$2$ and $3$ of Algorithm \ref{algo:ant}. Below, we detail our test suites and discuss the
+results.
+\clearpage
+
+\subsection{Setup}
+
+Let $\mathcal{N}$ and $\mathcal{U}$ denote the normal and uniform distribution,
+respectively. A test configuration consists of the following base parameters:
+
+\begin{itemize}
+    \item $|V| = |A| \cdot k$, where $k \in \{ 1, \dots, 20 \}$;
+    \item For each task $v_i$, with $i \leq |V| - 1$, if $\alpha_{v_i} \leq
+        \alpha_{v_{i+1}}$ and $\gamma_{v_i} < \gamma_{v_{i+1}}$, then $v_i \prec v_{i+1}$
+        has probability $0.5$. That is, the task order is a partial chain defined by coin
+        tosses.
+\end{itemize}
+Each suite then uses the following parameters.
+
+\paragraph{Suite $1$: Synthetic Problems}
+
+\begin{itemize}
+    \item $|A| = 2$. Consequently, problems have up to $40$ tasks. From Equation
+        \ref{eq:ant-tcomp}, it follows that a problem contains up to $40! \approx 8.16
+        \cdot 10^{47}$ schedules to be investigated;
+    \item The location space is a $50 \times 50$ grid. $\forall a \in A$, $\forall l_1,
+        l_2 \in L$, $\rho(a, l_1, l_2)$ is the Manhattan distance between $l_1$ and $l_2$
+        divided by the speed of $a$, which is sampled from $\mathcal{U}(1, 2)$. Each
+        agent has a random initial location, while each task has $2$ random possible
+        locations;
+    \item $\forall v \in V$, $w_v \sim \mathcal{U}(10, 50)$, $\alpha_v \sim \mathcal{U}(5,
+        600)$, $\gamma_v \sim \mathcal{U}(\alpha_v, 600)$, $\beta_v \sim
+        \mathcal{U}(\alpha_v, \gamma_v)$, and $\phi_v \sim \mathcal{U}(1, 2)$.
+\end{itemize}
+%\clearpage
+
+\paragraph{Suite $2$: LFB Problems}
+
+\begin{itemize}
+    \item Each task demand is defined by a record dated between $1$ January $2009$ and
+        $31$ May $2021$ as follows: $\alpha_v = \min_{a \in A} \rho(a, l^0_a, l_v)$;
+        $\gamma_v = \alpha_v + \kappa$, where $\kappa$ is the attendance time (in seconds)
+        of the firefighters; $\beta_v \sim \mathcal{U}(\alpha_v, \gamma_v)$; $|L_v| = 1$,
+        and $\phi_v = 1$. Lastly, since the median attendance time in the whole dataset
+        is about $5$ minutes, we set $w_v \sim \mathcal{U}(10, 300)$ to simulate
+        wide-ranging workloads;
+    \item The remaining parameters are the same as in Section \ref{sec:setup}.
+\end{itemize}
+
+\paragraph{Coalition Value Distributions}
+
+We use UC\_NDCS and UC\_Agent-based from Section \ref{sec:setup}, with the following
+addition. To simulate real-time domains where the further away $l_v$ is, the lower the
+benefit of performing $v$ \cite{stankovic2013edf}, we decrease each $\mu_v = u(C, v, l)$
+by $z \sim \mathcal{U}(\mu_v / 10, \mu_v / 4)$ with probability $\rho(\hat{a},
+l_{\hat{a}}, l_v) / (\tmax + 1)$, where $\hat{a}$ is the last agent to reach $l_v$, and
+$l_{\hat{a}}$ is the location of the task previously completed by $\hat{a}$, or
+$l_{\hat{a}}^0$ otherwise. Since it is a touchstone for the study of coalition formation
+problems \cite{sandholm1999}, we also use the following special case of Superadditive
+distribution: $u(C, v, l) = |C|$.
+We ensured consistency between the results of the algorithms as follows. Regarding
+Superadditive, all coalition values were computed and stored in hash maps before running
+the tests. As it is only defined by coalition sizes, this preprocessing step took $O(|A|)$
+time. For UC\_NDCS and UC\_Agent-based, the hash maps were lazy-initialised and shared
+among all problems (as done in Section \ref{sec:setup}).
+
+For each test suite, algorithm and coalition value, we solved $100$ problems, and measured
+the median and $95\%$ confidence interval of solution score (Equation \ref{eq:score}) and
+CPU time\footnote{Based on an Intel Xeon Gold $6138$ ($2$ GHz, $40$ threads).}. Since we
+have $3$ algorithms, $20$ task-to-agent ratios, $3$ coalition value distributions, $100$
+replicates, and $2$ test suites, the total number of tests performed is $36000$.
+
+\subsection{Results}
+
+\begin{figure}[t]
+    \centering
+    \begin{adjustbox}{width=\textwidth}
+        \input{images/medium-synthetic}
+    \end{adjustbox}
+    \begin{adjustbox}{width=\textwidth}
+        \input{images/large-lfb}
+    \end{adjustbox}
+    \caption[Evaluation of ANT and ANT-$\varepsilon$]{%
+        Performance of ANT and ANT-$\varepsilon$ in our test suites. Each subfigure
+        contains tests performed with the coalition value distribution in the title. Each
+        point is the median and $95\%$ confidence interval over $100$ replicates. The
+        X-axis indicates task-to-agent ratios, while the Y-axis reports solution scores
+        (Equation \ref{eq:score}). The higher the scores, the better the solutions.}
+    \label{fig:mt}
+\end{figure}
+
+Figure \ref{fig:mt} reports the results of our tests. The solution score generally
+increases because it is an absolute metric, hence the larger the problem size, the more
+tasks there are that can be completed by their soft latest times. Let $\eta^{\Lambda}_{B}
+= score(\bm{x}_{\Lambda}) / score(\bm{x}_{B})$ be the \emph{performance improvement} of
+$\Lambda \in \{ \text{ANT}, \text{ANT-}\varepsilon \}$ over $B \in \{ \text{CTS},
+\text{EDF} \}$. Regarding Suite $1$ (synthetic problems, $|A| = 2$), being an exact
+algorithm, ANT dominated both baselines. More precisely, we recorded the following median
+improvements:
+\begin{itemize}
+    \item Superadditive (Figure \ref{fig:mt}a): $\eta^{\text{ANT}}_{\text{CTS}} \approx 1.07
+        \pm [0.57, 0.06]$ and $\eta^{\text{ANT}}_{\text{EDF}} \approx 1.36 \pm [0.75, 0.32]$;
+    \item UC\_NDCS (Figure \ref{fig:mt}b): $\eta^{\text{ANT}}_{\text{CTS}} \approx 1.94
+        \pm [1.79, 0.81]$ and $\eta^{\text{ANT}}_{\text{EDF}} \approx 1.92 \pm [1.39, 0.82]$;
+    \item UC\_Agent-based (Figure \ref{fig:mt}c): $\eta^{\text{ANT}}_{\text{CTS}} \approx 1.89
+        \pm [0.64, 0.82]$ and $\eta^{\text{ANT}}_{\text{EDF}} \approx 2.35 \pm [1.02, 0.95]$.
+\end{itemize}
+The overall median is $1.9 \pm [1.83, 0.89]$. The wider confidence intervals in Figures
+\ref{fig:mt}b and \ref{fig:mt}c are due to the perturbations introduced by the UC factor.
+Regarding Suite $2$ (LFB problems, $|A| = 150$), the median improvements are:
+\begin{itemize}
+    \item Superadditive (Figure \ref{fig:mt}d):
+        $\eta^{\text{ANT-}\varepsilon}_{\text{CTS}} \approx 1.83
+        \pm [2.27, 1.55]$ and $\eta^{\text{ANT-}\varepsilon}_{\text{EDF}} \approx 3.38 \pm [2.04, 2.37]$;
+    \item UC\_NDCS (Figure \ref{fig:mt}e): $\eta^{\text{ANT-}\varepsilon}_{\text{CTS}} \approx 4.23
+        \pm [6.86, 3.79]$ and $\eta^{\text{ANT-}\varepsilon}_{\text{EDF}} \approx 4.26 \pm [3.05, 3.25]$;
+    \item UC\_Agent-based (Figure \ref{fig:mt}f):
+        $\eta^{\text{ANT-}\varepsilon}_{\text{CTS}} \approx 0.58
+        \pm [0.70, 0.33]$ and $\eta^{\text{ANT-}\varepsilon}_{\text{EDF}} \approx 2.15 \pm [1.42, 1.13]$.
+\end{itemize}
+The overall median is $2.6 \pm [8.49, 2.5]$. The confidence intervals are less wide in
+Suite $2$ because the tasks are chosen in chronological order, thus the problems vary less
+in difficulty. The non-monotonic performance of CTS depends both on its strategy of
+prioritising urgent and uncompleted tasks (Section \ref{sec:cts2}), and on the fact that
+the tasks are sorted chronologically. After reaching the `peak' performance (e.g.,
+$|V|/|A| = 9$ in Figure \ref{fig:mt}f), CTS becomes increasingly ineffective because, when
+there are too many chronologically ordered tasks, performing urgent and uncompleted tasks
+first is similar to EDF. Furthermore, the reason why it has the worst performance for
+$|V|/|A| \geq 12$ in Figure \ref{fig:mt}e is that it minimises the number of coalition
+allocations, which is penalised by any distribution based on NDCS. On the other hand,
+ANT-$\varepsilon$ tends to be more effective as the problem size increases, and is also
+more consistent, both with distributions such as Superadditive and UC\_Agent-based, which
+reward larger coalitions more and thus are suitable for real-time domains like disaster
+response, and with (a variant of) NDCS, which is more difficult to prune \cite[Section
+$5.2$]{rahwan2009}.
+
+In Suite $1$, CTS and EDF ran in less than $1$ ms, while ANT had a median of $15.56 \pm
+[8.9, 15.55]$ minutes. In Suite $2$, the medians were: $78 \pm [64, 72]$ ms for EDF;
+$18.35 \pm [39.7, 18.08]$ seconds for CTS, and $5.03 \pm [3.84, 4.44]$ seconds for
+ANT-$\varepsilon$. Hence, ANT-$\varepsilon$ was typically $3.65$ times faster than CTS.
+The total RAM usage was $7.25$ GB for Suite $1$, and $20.4$ GB for Suite $2$.
+
+To summarise, ANT solved synthetic problems with $2$ agents and up to $40$ tasks in less
+than $25$ minutes, finding up to $3.73$ times better solutions than our incomplete
+baselines. On the other hand, compared to the state-of-the-art CFSTP algorithm,
+ANT-$\varepsilon$ found $2.6$ times better median solutions in less than a third of the
+time.

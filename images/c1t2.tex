@@ -1,0 +1,145 @@
+\begin{tikzpicture}
+    \begin{groupplot}[%
+            group style={group size=2 by 2, vertical sep=1.75cm, horizontal sep=1.75cm},
+            grid=both,
+            grid style={line width=.1pt, draw=gray!10},
+            major grid style={line width=.2pt,draw=gray!50},
+            minor tick num=5,
+            ymin=0,
+            xtick={15,21,27,33,40},
+            legend style={/tikz/every even column/.append style={column sep=1em}, legend
+            columns=-1,at={(0.35,2.55)}, anchor=north east},
+            cycle list name=exotic3]
+
+        \nextgroupplot[ymin=50,xlabel=Number of agents,ylabel=Problem completion time,
+        title=(a)]
+
+        % S-CTS
+        \addplot+[error bars/.cd, y dir=both, y explicit,%
+        error bar style = {thick}] coordinates {%
+            (15, 167.97) +- (18.4, 18.4)
+            (21, 162.14) +- (19.11, 19.11)
+            (27, 130.94) +- (15.06, 15.06)
+            (33, 97.94)  +- (10.38, 10.38)
+            (40, 82.34)  +- (5.47, 5.47)
+        };
+
+        % DSA
+        \addplot+[error bars/.cd, y dir=both, y explicit,%
+        error bar style = {thick}] coordinates {%
+            (15, 191.44) +- (19.7, 19.7)
+            (21, 111.47) +- (13.98, 13.98)
+            (27, 73.8)   +- (2.9, 2.9)
+            (33, 65)     +- (1.39, 1.39)
+            (40, 58.27)  +- (1.24, 1.24)
+        };
+
+        % BMS
+        \addplot+[error bars/.cd, y dir=both, y explicit,%
+        error bar style = {thick}] coordinates {%
+            (15, 155.5) +- (19.04, 19.04)
+            (21, 75.54) +- (3.95, 3.95)
+            (27, 67.24) +- (1.35, 1.35)
+            (33, 61.64) +- (0.64, 0.64)
+            (40, 60.44) +- (1.09, 1.09)
+        };
+
+        \nextgroupplot[xlabel=Number of agents,ylabel=$b_{once}$, title=(b)]
+
+        % S-CTS
+        \addplot+[error bars/.cd, y dir=both, y explicit,%
+        error bar style = {thick}] coordinates {%
+            (15, 468.67) +- (105.57, 105.57)
+            (21, 417.57) +- (96.05, 96.05)
+            (27, 152.57) +- (48.29, 48.29)
+            (33, 58.6) +- (18.42, 18.42)
+            (40, 37.9) +- (5.34, 5.34)
+        };
+
+        % DSA
+        \addplot+[error bars/.cd, y dir=both, y explicit,%
+        error bar style = {thick}] coordinates {%
+            (15, 587.1) +- (104.18, 104.18)
+            (21, 186.54) +- (70.6, 70.6)
+            (27, 32.87) +- (1.93, 1.93)
+            (33, 29.64) +- (1.3, 1.3)
+            (40, 26.54) +- (1.11, 1.11)
+        };
+
+        % BMS
+        \addplot+[error bars/.cd, y dir=both, y explicit,%
+        error bar style = {thick}] coordinates {%
+            (15, 395.07) +- (98.67, 98.67)
+            (21, 31.64) +- (2.77, 2.77)
+            (27, 26.9) +- (0.83, 0.83)
+            (33, 26) +- (0.8, 0.8)
+            (40, 25.44) +- (0.84, 0.84)
+        };
+
+        \nextgroupplot[xlabel=Number of agents,ylabel=Score (\%), title=(b)]
+
+        % S-CTS
+        \addplot+[error bars/.cd, y dir=both, y explicit,%
+        error bar style = {thick}] coordinates {%
+            (15, 8.5108) +- (1.94, 1.94)
+            (21, 9.86725) +- (2.27, 2.27)
+            (27, 3.99635) +- (1.49, 1.49)
+            (33, 1.43590) +- (0.31, 0.31)
+            (40, 0.98847) +- (0.002, 0.002)
+        };
+
+        % DSA
+        \addplot+[error bars/.cd, y dir=both, y explicit,%
+        error bar style = {thick}] coordinates {%
+            (15, 12.68) +- (2.375, 2.375)
+            (21, 5.09) +- (1.93, 1.93)
+            (27, 0.99) +- (0.0009, 0.0009)
+            (33, 0.99175) +- (0.0004, 0.0004)
+            (40, 0.99264) +- (0.0004, 0.0004)
+        };
+
+        % BMS
+        \addplot+[error bars/.cd, y dir=both, y explicit,%
+        error bar style = {thick}] coordinates {%
+            (15, 6.63) +- (1.58, 1.58)
+            (21, 0.99) +- (0.001, 0.001)
+            (27, 0.99278) +- (0.0002, 0.0002)
+            (33, 0.99325) +- (0.0001, 0.0001)
+            (40, 0.99342) +- (0.0001, 0.0001)
+        };
+
+        \nextgroupplot[xlabel=Number of agents,ylabel=Average CPU time (ms), title=(d)]
+
+        % S-CTS
+        \addplot+[error bars/.cd, y dir=both, y explicit,%
+        error bar style = {thick}] coordinates {%
+            (15, 9.9) +- (1.76, 1.76)
+            (21, 16.84) +- (3.44, 3.44)
+            (27, 9.97) +- (2.465, 2.465)
+            (33, 6.8) +- (0.68, 0.68)
+            (40, 11.37) +- (0.57, 0.57)
+        };
+
+        % DSA
+        \addplot+[error bars/.cd, y dir=both, y explicit,%
+        error bar style = {thick}] coordinates {%
+            (15, 24.54) +- (3.37, 3.37)
+            (21, 19.97) +- (4.14, 4.14)
+            (27, 17.57) +- (0.43, 0.43)
+            (33, 23.1) +- (0.53, 0.53)
+            (40, 44.34) +- (1.34, 1.34)
+        };
+
+        % BMS
+        \addplot+[error bars/.cd, y dir=both, y explicit,%
+        error bar style = {thick}] coordinates {%
+            (15, 255.1) +- (44.11, 44.11)
+            (21, 129.57) +- (4.87, 4.87)
+            (27, 164.77) +- (3.4, 3.4)
+            (33, 187.54) +- (7.14, 7.14)
+            (40, 263.47) +- (6.63, 6.63)
+        };
+
+    \legend{\textsc{s-cts}, \textsc{dsa}, \textsc{binaryms}}
+    \end{groupplot}
+\end{tikzpicture}

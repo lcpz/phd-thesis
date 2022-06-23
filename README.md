@@ -6,9 +6,7 @@ Title: [Large-scale, Dynamic and Distributed Multi-agent Coordination for Real-t
 
 Author: [Luca Capezzuto](https://lcpz.gitlab.io)
 
-Supervisors: [Sarvapali D. (Gopal) Ramchurn](www.sramchurn.com), [Danesh Tarapore](https://daneshtarapore.com)
-
-Licences: [UoS](https://library.soton.ac.uk/licences/thesis) (`thesis.pdf`), [MIT](https://opensource.org/licenses/MIT) (everything else)
+Supervisors: [Sarvapali D. (Gopal) Ramchurn](http://www.sramchurn.com), [Danesh Tarapore](https://daneshtarapore.com)
 
 # BibTeX
 
